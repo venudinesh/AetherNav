@@ -1,0 +1,153 @@
+name: aethernav_edge
+description: "AetherNav Edge — an offline-first spatial mobility assistant: on-device camera perception, IMU navigation, voice guidance and hazard alerts, with an opt-in live map."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.1
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  camera: ^0.12.1
+  google_mlkit_object_detection: ^0.17.1
+  google_mlkit_text_recognition: ^0.17.1
+  sensors_plus: ^7.1.0
+  speech_to_text: ^7.5.0
+  flutter_tts: ^4.2.5
+  vibration: ^3.2.1
+  # Pinned: permission_handler >=13 pulls permission_handler_android 14.x, which
+  # compiles against SDK 37. Only the minor-versioned "android-37.0" platform is
+  # installed here and AGP resolves it inconsistently, so we hold at 12.0.1
+  # (stable API 35) which builds cleanly against compileSdk 36. This is the one
+  # intentional non-latest pin.
+  permission_handler: 12.0.1
+  path_provider: ^2.1.6
+  sqflite: ^2.4.4
+  # Small key/value store for user preferences (theme, toggles, stride
+  # calibration) so they survive an app restart. Trip history stays in sqflite.
+  shared_preferences: ^2.5.3
+  # Lightweight state management (pure Dart, no native code -> no extra build risk).
+  provider: ^6.1.2
+  # Offline-capable maps. flutter_map_location_marker is intentionally NOT used:
+  # its latest (9.0.0) caps latlong2 at <0.10 and flutter_map at 7.x, which would
+  # drag the whole map stack backwards. We draw the live-location "blue dot"
+  # ourselves as a CircleLayer + MarkerLayer fed by LocationController, so the map
+  # stack stays on the latest flutter_map / latlong2 / geolocator.
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  geolocator: ^14.0.3
+
+  # --- Optional offline voice-assistant LLM (opt-in, OFF by default) ---
+  # On-device llama.cpp inference over a local GGUF model — no server, no network
+  # at inference time. None of these three depend on permission_handler, so the
+  # pinned 12.0.1 above is unaffected (verified on pub.dev before adding).
+  llamadart: ^0.8.24
+  # Resumable model download with an OS progress notification + foreground service,
+  # so the ~0.8 GB one-time fetch survives the app being backgrounded.
+  background_downloader: ^9.6.3
+  # Lets the user side-load their own .gguf from storage (SAF — no storage permission).
+  file_picker: ^13.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# App launcher icon: indigo->teal brand gradient + white navigation arrow.
+# Generated from assets/icon/ via `dart run flutter_launcher_icons`.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "assets/icon/app_icon_background.png"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  assets:
+    - assets/landmarks/demo_map.json
+
+  # Inter / Inter Tight bundled locally as variable fonts (no runtime web fonts,
+  # per DESIGN_RULES). Weights are selected via FontVariation('wght', ...) and
+  # tabular figures via FontFeature.tabularFigures() in theme/app_theme.dart.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Variable.ttf
+    - family: InterTight
+      fonts:
+        - asset: assets/fonts/InterTight-Variable.ttf
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/to/resolution-aware-images
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/to/asset-from-package
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/to/font-from-package

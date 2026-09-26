@@ -1,0 +1,11 @@
+{
+  "area": "Demo Transit Concourse",
+  "landmarks": [
+    { "id": "exit_1", "name": "Exit 1", "kind": "exit", "bearing": 0, "distanceMeters": 12, "note": "North doors to street level" },
+    { "id": "exit_4", "name": "Exit 4", "kind": "exit", "bearing": 90, "distanceMeters": 25, "note": "East, past the ticket machines" },
+    { "id": "stairs_a", "name": "Stairs A", "kind": "stairs", "bearing": 45, "distanceMeters": 8, "note": "Down to Platform 2" },
+    { "id": "restrooms", "name": "Restrooms", "kind": "room", "bearing": 270, "distanceMeters": 15, "note": "West corridor" },
+    { "id": "platform_2", "name": "Platform 2", "kind": "room", "bearing": 135, "distanceMeters": 30, "note": "Southbound trains" },
+    { "id": "help_point", "name": "Help Point", "kind": "room", "bearing": 180, "distanceMeters": 10, "note": "Assistance intercom" }
+  ]
+}
