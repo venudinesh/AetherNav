@@ -97,15 +97,19 @@ flutter run
 ### Build a release APK
 
 ```bash
-flutter build apk --release --target-platform android-arm64
+flutter build apk --release --split-per-abi
 ```
 
-The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
+Install the `arm64-v8a` split, written to
+`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`.
 
-> `--target-platform android-arm64` keeps the APK to the single `arm64-v8a` ABI
-> (every current phone). Without it, Flutter builds a universal APK that also
-> bundles the `armeabi-v7a` and `x86_64` native libraries — roughly tripling the
-> size for no benefit on real hardware.
+> `--split-per-abi` produces one APK per ABI, each carrying only that ABI's
+> native libraries. It's the reliable way to ship an `arm64-v8a`-only build:
+> ML Kit's `.so` libraries are shipped inside its AARs for every ABI, so
+> neither `ndk.abiFilters` nor `--target-platform android-arm64` fully strips
+> the unused `armeabi-v7a` / `x86_64` copies from a universal APK — only the
+> per-ABI split does. A plain `flutter build apk --release` still works; it
+> just produces a larger universal APK.
 
 > The release build is currently signed with the debug key (the Flutter
 > template default) so it installs by sideloading. For Play Store distribution,

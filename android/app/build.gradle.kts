@@ -32,10 +32,11 @@ android {
         // Prefer arm64-v8a (every current Android phone, incl. the target
         // device). NOTE: abiFilters only constrains ABIs for code the Android
         // NDK build compiles here — it does NOT filter the prebuilt .so libs
-        // that ship inside the llama.cpp / ML Kit / Flutter AARs. To actually
-        // keep the release APK to a single ABI, build with
-        // `flutter build apk --release --target-platform android-arm64`
-        // (a plain `flutter build apk` still produces a universal APK).
+        // that ship inside the llama.cpp / ML Kit / Flutter AARs. Even
+        // `--target-platform android-arm64` leaves ML Kit's per-ABI .so in a
+        // universal APK. To ship a true single-ABI build, use
+        // `flutter build apk --release --split-per-abi` and install the
+        // app-arm64-v8a-release.apk split.
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
