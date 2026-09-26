@@ -29,9 +29,13 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // llamadart ships llama.cpp native libs per ABI. Ship only arm64-v8a
-        // (every current Android phone, incl. the target device) so the APK
-        // isn't bloated with x86/armeabi variants. Drops x86 emulator support.
+        // Prefer arm64-v8a (every current Android phone, incl. the target
+        // device). NOTE: abiFilters only constrains ABIs for code the Android
+        // NDK build compiles here — it does NOT filter the prebuilt .so libs
+        // that ship inside the llama.cpp / ML Kit / Flutter AARs. To actually
+        // keep the release APK to a single ABI, build with
+        // `flutter build apk --release --target-platform android-arm64`
+        // (a plain `flutter build apk` still produces a universal APK).
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
@@ -42,6 +46,15 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Keep R8 code/resource shrinking off for release. ML Kit's
+            // TextRecognizer references optional language models (Chinese,
+            // Devanagari, Japanese, Korean) we don't bundle; full-mode R8
+            // treats those missing classes as fatal and fails the build. The
+            // APK size is dominated by native .so libs (llama.cpp, ML Kit),
+            // which R8 doesn't touch, so shrinking buys little here.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

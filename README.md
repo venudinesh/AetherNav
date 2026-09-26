@@ -97,10 +97,15 @@ flutter run
 ### Build a release APK
 
 ```bash
-flutter build apk --release
+flutter build apk --release --target-platform android-arm64
 ```
 
 The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
+
+> `--target-platform android-arm64` keeps the APK to the single `arm64-v8a` ABI
+> (every current phone). Without it, Flutter builds a universal APK that also
+> bundles the `armeabi-v7a` and `x86_64` native libraries — roughly tripling the
+> size for no benefit on real hardware.
 
 > The release build is currently signed with the debug key (the Flutter
 > template default) so it installs by sideloading. For Play Store distribution,
