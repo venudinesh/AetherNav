@@ -86,6 +86,45 @@ class _RootShellState extends State<RootShell> {
   @override
   Widget build(BuildContext context) {
     final glass = context.watch<SettingsController>().liquidGlass;
+    final width = MediaQuery.sizeOf(context).width;
+    // Tablets and unfolded foldables get a side rail; phones keep the bottom bar.
+    if (width >= 720) {
+      return Scaffold(
+        body: Row(children: [
+          NavigationRail(
+            selectedIndex: _index,
+            onDestinationSelected: (i) => setState(() => _index = i),
+            labelType: width >= 960
+                ? NavigationRailLabelType.all
+                : NavigationRailLabelType.selected,
+            destinations: const [
+              NavigationRailDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: Text('Home')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.center_focus_strong_outlined),
+                  selectedIcon: Icon(Icons.center_focus_strong),
+                  label: Text('Camera')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.map_outlined),
+                  selectedIcon: Icon(Icons.map),
+                  label: Text('Map')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.route_outlined),
+                  selectedIcon: Icon(Icons.route),
+                  label: Text('Trip')),
+              NavigationRailDestination(
+                  icon: Icon(Icons.mic_none_outlined),
+                  selectedIcon: Icon(Icons.mic),
+                  label: Text('Voice')),
+            ],
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(child: _screenFor(_index)),
+        ]),
+      );
+    }
     return Scaffold(
       body: _screenFor(_index),
       bottomNavigationBar: glass ? _glassBar(context) : _bar(context),

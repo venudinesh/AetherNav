@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -23,9 +22,6 @@ import 'state/voice_controller.dart';
 /// data, then runs [AetherNavApp].
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Portrait only: it's a handheld aid, and the short landscape viewport
-  // crams the camera idle screen against the nav bar.
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // On-device services.
   final db = AppDatabase.instance;
