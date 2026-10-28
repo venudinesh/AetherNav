@@ -1,7 +1,7 @@
 import 'package:permission_handler/permission_handler.dart';
 
-/// Thin wrapper around the runtime permissions AetherNav Edge needs.
-/// Camera is required; microphone is optional (voice degrades gracefully).
+/// Runtime permission requests. Camera is required; mic is optional (voice
+/// degrades to typed input).
 class AppPermissions {
   static Future<bool> ensureCamera() async {
     final status = await Permission.camera.request();
@@ -13,9 +13,8 @@ class AppPermissions {
     return status.isGranted;
   }
 
-  /// Requests the Android 13+ notification permission so the model-download
-  /// progress notification can show. Best-effort — the download proceeds either
-  /// way (the notification is a nicety, not a requirement).
+  /// Android 13+ notification permission, for the model-download progress
+  /// notification. Best-effort — the download runs either way.
   static Future<bool> ensureNotifications() async {
     final status = await Permission.notification.request();
     return status.isGranted;

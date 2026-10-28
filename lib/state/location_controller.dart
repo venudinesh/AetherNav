@@ -4,25 +4,19 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Where the live-location subsystem currently stands, so the map can show an
-/// honest state (off / locating / denied / service disabled / active / error)
-/// instead of a silent blank map.
+/// State of the live-location subsystem, shown by the map.
 enum LocationStatus {
   off, // live location disabled by the user
-  requesting, // asking for permission / waiting for the first fix
-  denied, // permission refused this time
-  deniedForever, // permission permanently refused (needs app settings)
-  serviceOff, // device location services are turned off
+  requesting, // asking for permission / waiting for first fix
+  denied, // permission refused
+  deniedForever, // needs app settings to reset
+  serviceOff, // device location services are off
   active, // streaming fixes
-  error, // an unexpected failure
+  error, // unexpected failure
 }
 
-/// Owns geolocator: permission + service checks and the position stream. Driven
-/// by the "Live location" setting; the map and any follow-me logic read
-/// [position] and [status] from here.
-///
-/// This is the one subsystem that leaves the device (GPS + optional online map
-/// tiles). It stays OFF until the user explicitly enables live location.
+/// Wraps geolocator: permission + service checks and the position stream.
+/// Driven by the "Live location" setting.
 class LocationController extends ChangeNotifier {
   LocationStatus status = LocationStatus.off;
   Position? position;
@@ -31,14 +25,12 @@ class LocationController extends ChangeNotifier {
   bool _enabled = false;
   StreamSubscription<Position>? _sub;
 
-  // Breadcrumb of the current/last trip: every GPS fix while recording, drawn
-  // Strava-style as a polyline once the trip stops. Only populated when live
-  // location is streaming — a pure IMU trip leaves this empty.
+  // Breadcrumbs of the current/last trip: GPS fixes while recording, drawn as
+  // a polyline after the trip stops.
   final List<LatLng> track = [];
   bool _recording = false;
 
-  /// Begin a fresh breadcrumb for a new trip. Seeds with the current fix so the
-  /// path starts at the trip's origin even before the next fix arrives.
+  /// Start a fresh breadcrumb track, seeded with the current fix.
   void startTrack() {
     track.clear();
     if (position != null) {
@@ -54,8 +46,7 @@ class LocationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Enable/disable live location. Idempotent: unrelated settings changes that
-  /// re-send the current value are ignored so we don't thrash the GPS stream.
+  /// setEnabled is idempotent: re-sending the current value is ignored.
   Future<void> setEnabled(bool on) async {
     if (on == _enabled) return;
     _enabled = on;
@@ -66,8 +57,7 @@ class LocationController extends ChangeNotifier {
     }
   }
 
-  /// Re-attempt after a denial or a disabled-service state, without toggling the
-  /// user's setting off and on.
+  /// Retry after a denial or disabled service, without toggling the setting.
   Future<void> retry() async {
     if (!_enabled) {
       await setEnabled(true);

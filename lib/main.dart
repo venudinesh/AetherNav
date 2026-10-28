@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -18,14 +19,13 @@ import 'state/settings_controller.dart';
 import 'state/trips_controller.dart';
 import 'state/voice_controller.dart';
 
-/// Boots AetherNav Edge: constructs the on-device services and the
-/// controllers, wires the cross-controller callbacks (hazards → haptics / voice
-/// / log, detections → log, voice ↔ heading + log, trips → log), primes the
-/// offline data, then hands everything to [AetherNavApp]. Everything runs
-/// on-device except the opt-in live map (GPS + online tiles), which stays off
-/// until the user enables it in Settings.
+/// Boots services + controllers, wires their cross-callbacks, primes offline
+/// data, then runs [AetherNavApp].
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Portrait only: it's a handheld aid, and the short landscape viewport
+  // crams the camera idle screen against the nav bar.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // On-device services.
   final db = AppDatabase.instance;
@@ -47,12 +47,10 @@ Future<void> main() async {
   await llm.init(); // resume any background download + wire the OS notification
   final trips = TripsController(db);
 
-  // Keep spoken output in step with the user's preference, and drive the
-  // GPS/live-location stream and the optional offline LLM from their settings
-  // (setEnabled is idempotent on both).
+  // Push the current settings to TTS / GPS / LLM (setEnabled is idempotent).
   tts.enabled = settings.voiceEnabled;
-  location.setEnabled(settings.liveLocation); // honor the persisted toggle at boot
-  llm.setEnabled(settings.useLocalLlm); // loads a set model if enabled
+  location.setEnabled(settings.liveLocation);
+  llm.setEnabled(settings.useLocalLlm);
   settings.addListener(() {
     tts.enabled = settings.voiceEnabled;
     location.setEnabled(settings.liveLocation);
@@ -68,17 +66,14 @@ Future<void> main() async {
   perception.onDetection = (d) => log.add(LogType.detection, d.label);
   voice.headingProvider = () => navigation.heading;
   voice.onExchange = (q, a) => log.add(LogType.voice, q, detail: a);
-  // Optional grounded offline-LLM front-end; returns null unless a model is
-  // loaded, so the deterministic matcher stays the fallback.
+  // Returns null unless a model is loaded, so the matcher stays the fallback.
   voice.llmGenerate = llm.generate;
-  // Record a GPS breadcrumb over the trip's span (only fills in while live
-  // location is streaming) so the trip can be replayed on the map afterwards.
+  // Record a GPS breadcrumb over the trip so it can be replayed on the map.
   navigation.onTripStart = location.startTrack;
   navigation.onTripComplete = (distanceMeters, duration, steps) {
     location.stopTrack();
-    // Save the trip to history (Strava-style). startTime is derived from the
-    // frozen duration since the controller's _tripStart is private. The track is
-    // copied because location.track is reused by the next trip.
+    // startTime is derived from the frozen duration; track is copied because
+    // location.track is reused by the next trip.
     trips.add(TripRecord(
       startTime: DateTime.now().subtract(duration),
       duration: duration,
@@ -98,7 +93,9 @@ Future<void> main() async {
   // Prime offline data.
   await navigation.loadMap();
   final map = navigation.map;
-  if (map != null) await voice.init(map);
+  // Set the map for typed answers now; the mic is only initialised when the
+  // Voice tab opens (see VoiceScreen), so launch doesn't prompt for it.
+  if (map != null) voice.setMap(map);
   await log.load();
   await trips.load();
   await log.add(LogType.session, 'Session started');

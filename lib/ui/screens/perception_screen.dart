@@ -9,9 +9,6 @@ import '../widgets/app_states.dart';
 import '../widgets/detection_overlay.dart';
 import '../widgets/hazard_banner.dart';
 
-/// Live offline camera perception: OCR + object detection on discrete frames,
-/// with a hazard banner, a bounding-box overlay, and an honest list of what the
-/// device currently sees.
 class PerceptionScreen extends StatefulWidget {
   const PerceptionScreen({super.key});
   @override
@@ -22,21 +19,38 @@ class _PerceptionScreenState extends State<PerceptionScreen> {
   late final PerceptionController _perception = context.read<PerceptionController>();
   bool _denied = false;
 
+  // Drives the idle copy: if permission is already granted (e.g. after Stop or
+  // returning to the tab) we don't hint at a permission prompt that won't show.
+  bool _permissionGranted = false;
+
   @override
   void initState() {
     super.initState();
     _boot();
   }
 
+  /// Start automatically only if the camera is already granted. Otherwise stay
+  /// on the idle screen so the user reads why first and taps to grant — the OS
+  /// prompt sits behind an explicit action instead of firing on tab open.
   Future<void> _boot() async {
-    setState(() => _denied = false);
+    final granted = await AppPermissions.cameraGranted();
+    if (!mounted) return;
+    setState(() {
+      _denied = false;
+      _permissionGranted = granted;
+    });
+    if (granted) _perception.start();
+  }
+
+  /// Tapped Start / Try again: request camera, then start (or show denial).
+  Future<void> _start() async {
     final granted = await AppPermissions.ensureCamera();
     if (!mounted) return;
-    if (granted) {
-      _perception.start();
-    } else {
-      setState(() => _denied = true);
-    }
+    setState(() {
+      _permissionGranted = granted;
+      _denied = !granted;
+    });
+    if (granted) _perception.start();
   }
 
   @override
@@ -68,7 +82,7 @@ class _PerceptionScreenState extends State<PerceptionScreen> {
             IconButton(
               tooltip: 'Start',
               icon: const Icon(Icons.play_circle_outline),
-              onPressed: _boot,
+              onPressed: _start,
             ),
         ],
       ),
@@ -78,16 +92,22 @@ class _PerceptionScreenState extends State<PerceptionScreen> {
 
   Widget _buildBody(BuildContext context, PerceptionController perception) {
     if (_denied) {
-      return _PermissionDenied(onRetry: _boot);
+      return _PermissionDenied(onRetry: _start);
     }
     switch (perception.status) {
       case PerceptionStatus.idle:
         return EmptyState(
           icon: Icons.photo_camera_outlined,
-          title: 'Camera stopped',
-          message: 'Start the camera to read signs and detect obstacles.',
+          title: _permissionGranted
+              ? 'Camera stopped'
+              : 'Read signs and spot obstacles',
+          message: _permissionGranted
+              ? 'Start the camera to read signs and detect obstacles.'
+              : 'The camera runs entirely on this device — frames are analysed '
+                  'and discarded, never stored or uploaded. Tap start and allow '
+                  'camera access.',
           action: FilledButton.icon(
-            onPressed: _boot,
+            onPressed: _start,
             icon: const Icon(Icons.play_arrow),
             label: const Text('Start camera'),
           ),
@@ -97,8 +117,8 @@ class _PerceptionScreenState extends State<PerceptionScreen> {
       case PerceptionStatus.error:
         return ErrorState(
           title: 'Camera unavailable',
-          message: perception.error ?? 'The camera could not be started.',
-          onRetry: _boot,
+          message: perception.error ?? 'Could not start the camera.',
+          onRetry: _start,
         );
       case PerceptionStatus.running:
         return _CameraView(perception: perception);
@@ -124,8 +144,8 @@ class _PermissionDenied extends StatelessWidget {
               style: t.titleMedium, textAlign: TextAlign.center),
           const SizedBox(height: 6),
           Text(
-            'AetherNav Edge uses the camera on-device to read signs and detect '
-            'obstacles. Grant the camera permission to continue.',
+            'AetherNav Edge needs the camera for on-device sign and '
+            'obstacle detection.',
             textAlign: TextAlign.center,
             style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),

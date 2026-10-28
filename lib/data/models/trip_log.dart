@@ -1,4 +1,3 @@
-/// Categories of things worth logging during a session.
 enum LogType { session, detection, hazard, voice, navigation }
 
 extension LogTypeInfo on LogType {
@@ -14,7 +13,7 @@ extension LogTypeInfo on LogType {
       LogType.values.firstWhere((e) => e.name == s, orElse: () => LogType.session);
 }
 
-/// One persisted log row. Stored locally in sqflite (no cloud, no laptop sync).
+/// one persisted log row (local sqflite only, no sync)
 class TripLogEntry {
   final int? id;
   final DateTime time;

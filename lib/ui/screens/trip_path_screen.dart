@@ -4,10 +4,8 @@ import 'package:flutter_map/flutter_map.dart';
 import '../../core/trip_math.dart';
 import '../../data/models/trip_record.dart';
 
-/// Read-only replay of a saved trip. When the trip has a GPS breadcrumb (Live
-/// location was on) it's drawn Strava-style as a polyline on OpenStreetMap
-/// tiles with start/finish markers and a stats card; a pure IMU trip (no track)
-/// shows the same stats full-screen without any map tiles.
+/// Replay of a saved trip. A GPS track is drawn as a polyline on map tiles with
+/// start/finish markers; an IMU-only trip shows the stats without a map.
 class TripPathScreen extends StatelessWidget {
   final TripRecord trip;
   const TripPathScreen({super.key, required this.trip});
@@ -90,8 +88,7 @@ class TripPathScreen extends StatelessWidget {
     ]);
   }
 
-  /// Pure IMU trip: no geographic track, so show the stats full-screen with an
-  /// honest note instead of an empty map.
+  /// IMU-only trip: no geographic track, so no map tiles.
   Widget _statsOnly(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
@@ -105,8 +102,8 @@ class TripPathScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'No GPS path for this trip. Turn on Live location during a trip '
-              'to map the route here.',
+              'No GPS path for this trip. Turn on Live location to record the '
+              'route.',
               style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
@@ -182,7 +179,6 @@ class _Stat extends StatelessWidget {
   }
 }
 
-/// A small filled dot with a white ring, used for the start/finish points.
 class _EndDot extends StatelessWidget {
   final Color color;
   const _EndDot({required this.color});

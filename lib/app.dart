@@ -12,10 +12,8 @@ import 'state/voice_controller.dart';
 import 'theme/app_theme.dart';
 import 'ui/root_shell.dart';
 
-/// Root widget. Publishes the already-constructed controllers to the tree via
-/// [provider] and drives light/dark theming from [SettingsController]. All
-/// controllers are built and wired in `main()` so cross-controller callbacks
-/// (hazards → haptics/voice/log, etc.) live in one place, not inside the app.
+/// Root widget. Publishes the controllers built in main() to the tree and
+/// drives light/dark theming from [SettingsController].
 class AetherNavApp extends StatelessWidget {
   final SettingsController settings;
   final PerceptionController perception;
@@ -58,6 +56,18 @@ class AetherNavApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: s.themeMode,
+          // Large text multiplies the platform scale (so we honour the OS
+          // setting too, then bump it) rather than pinning a fixed size.
+          builder: (context, child) {
+            final mq = MediaQuery.of(context);
+            final base = mq.textScaler.scale(14) / 14;
+            final factor =
+                (s.largeText ? base * 1.3 : base).clamp(0.5, 3.4).toDouble();
+            return MediaQuery(
+              data: mq.copyWith(textScaler: TextScaler.linear(factor)),
+              child: child!,
+            );
+          },
           home: const RootShell(),
         ),
       ),

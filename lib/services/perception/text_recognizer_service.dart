@@ -1,7 +1,6 @@
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
-/// Offline OCR via ML Kit. Reading sign text ("EXIT", "STAIRS", "Platform 2")
-/// is the most reliable perception signal for a controlled demo environment.
+/// ml kit ocr (latin script), on-device.
 class TextRecognizerService {
   final TextRecognizer _recognizer =
       TextRecognizer(script: TextRecognitionScript.latin);

@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-/// A known point in the controlled demo area. Bearings are degrees clockwise
-/// from the area's reference "north"; distances are approximate metres.
+/// a known point in the demo area; bearing is degrees clockwise from the
+/// area's reference north, distances are rough metres
 class Landmark {
   final String id;
   final String name; // "Exit 4"
@@ -31,7 +31,7 @@ class Landmark {
       );
 }
 
-/// The loaded demo map: an area name plus its landmarks.
+/// loaded demo map: area name + its landmarks
 class DemoMap {
   final String area;
   final List<Landmark> landmarks;

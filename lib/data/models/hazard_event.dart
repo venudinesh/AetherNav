@@ -1,4 +1,4 @@
-/// Severity of a hazard. Ordered: higher index = more urgent.
+/// severity, ordered: higher index = more urgent
 enum HazardLevel { none, caution, warning, danger }
 
 extension HazardLevelInfo on HazardLevel {
@@ -9,11 +9,10 @@ extension HazardLevelInfo on HazardLevel {
         HazardLevel.danger => 'Danger',
       };
 
-  /// Whether this level should fire a haptic + voice alert.
+  /// whether this level fires haptic + voice alert
   bool get shouldAlert => index >= HazardLevel.warning.index;
 }
 
-/// A hazard determined by the hazard engine from the current detections.
 class HazardEvent {
   final HazardLevel level;
   final String message; // e.g. "Stairs ahead"

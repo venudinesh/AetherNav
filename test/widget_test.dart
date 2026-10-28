@@ -1,6 +1,5 @@
-// Unit tests for AetherNav Edge's pure-Dart domain logic. Widget/integration
-// coverage is intentionally omitted here because the app boots from on-device
-// services (camera, TTS, sensors, SQLite) that aren't available in the test VM.
+// Unit tests for AetherNav Edge's pure-Dart domain logic. No widget tests: the
+// app boots camera, TTS, sensor and SQLite services the test VM does not have.
 
 import 'package:flutter_test/flutter_test.dart';
 

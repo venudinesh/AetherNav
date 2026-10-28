@@ -41,37 +41,24 @@ dependencies:
   speech_to_text: ^7.5.0
   flutter_tts: ^4.2.5
   vibration: ^3.2.1
-  # Pinned: permission_handler >=13 pulls permission_handler_android 14.x, which
-  # compiles against SDK 37. Only the minor-versioned "android-37.0" platform is
-  # installed here and AGP resolves it inconsistently, so we hold at 12.0.1
-  # (stable API 35) which builds cleanly against compileSdk 36. This is the one
-  # intentional non-latest pin.
+  # Pinned: 13+ pulls permission_handler_android 14.x, which compiles against
+  # SDK 37 and doesn't resolve with the toolchain here. 12.0.1 builds on 36.
   permission_handler: 12.0.1
   path_provider: ^2.1.6
   sqflite: ^2.4.4
-  # Small key/value store for user preferences (theme, toggles, stride
-  # calibration) so they survive an app restart. Trip history stays in sqflite.
   shared_preferences: ^2.5.3
-  # Lightweight state management (pure Dart, no native code -> no extra build risk).
   provider: ^6.1.2
-  # Offline-capable maps. flutter_map_location_marker is intentionally NOT used:
-  # its latest (9.0.0) caps latlong2 at <0.10 and flutter_map at 7.x, which would
-  # drag the whole map stack backwards. We draw the live-location "blue dot"
-  # ourselves as a CircleLayer + MarkerLayer fed by LocationController, so the map
-  # stack stays on the latest flutter_map / latlong2 / geolocator.
+  # No flutter_map_location_marker (it caps flutter_map at 7.x); the "you are
+  # here" dot is drawn with a CircleLayer + MarkerLayer instead.
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
   geolocator: ^14.0.3
 
-  # --- Optional offline voice-assistant LLM (opt-in, OFF by default) ---
-  # On-device llama.cpp inference over a local GGUF model — no server, no network
-  # at inference time. None of these three depend on permission_handler, so the
-  # pinned 12.0.1 above is unaffected (verified on pub.dev before adding).
+  # Optional offline voice model (opt-in, off by default).
   llamadart: ^0.8.24
-  # Resumable model download with an OS progress notification + foreground service,
-  # so the ~0.8 GB one-time fetch survives the app being backgrounded.
+  # Resumable ~0.8 GB model download that survives backgrounding.
   background_downloader: ^9.6.3
-  # Lets the user side-load their own .gguf from storage (SAF — no storage permission).
+  # For side-loading a .gguf from storage.
   file_picker: ^13.1.0
 
 dev_dependencies:
@@ -110,9 +97,8 @@ flutter:
   assets:
     - assets/landmarks/demo_map.json
 
-  # Inter / Inter Tight bundled locally as variable fonts (no runtime web fonts,
-  # per DESIGN_RULES). Weights are selected via FontVariation('wght', ...) and
-  # tabular figures via FontFeature.tabularFigures() in theme/app_theme.dart.
+  # Inter / Inter Tight bundled as local variable fonts so text renders offline.
+  # Weights via FontVariation('wght'), tabular figures in theme/app_theme.dart.
   fonts:
     - family: Inter
       fonts:

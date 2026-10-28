@@ -1,7 +1,4 @@
-/// A point-in-time snapshot of the offline navigation estimate.
-///
-/// This is deliberately a *controlled-environment* estimate (IMU dead-reckoning
-/// + visual landmarks), NOT universal GPS-free navigation.
+/// snapshot of the nav estimate (imu dead-reckoning + landmarks, not gps)
 class NavSnapshot {
   final double headingDegrees; // 0..360, device compass heading
   final int stepCount; // steps since session start

@@ -8,10 +8,8 @@ import '../data/models/landmark.dart';
 import '../data/models/nav_state.dart';
 import '../services/navigation/imu_service.dart';
 
-/// Drives the offline navigation estimate from the IMU and the demo map, and
-/// tracks a "trip": a user-started span with a live distance, step count and
-/// duration. Trip distance/steps are measured as deltas from the IMU's running
-/// counters, so resetting mid-trip is safe.
+/// Navigation estimate from the IMU plus trip tracking. Trip numbers are
+/// deltas from the IMU's running counters, so resetting mid-trip is safe.
 class NavigationController extends ChangeNotifier {
   NavigationController(this._prefs, {ImuService? imu})
       : _imu = imu ?? ImuService() {
@@ -34,8 +32,7 @@ class NavigationController extends ChangeNotifier {
   DateTime? _tripStart;
   int _tripStartSteps = 0;
   Timer? _tripTimer;
-  // Frozen at stop so the final numbers don't keep climbing if the user walks
-  // around after ending the trip (null while a trip is running).
+  // Frozen at stop so the final numbers don't move after the trip ends.
   DateTime? _tripEnd;
   int? _tripEndSteps;
 
@@ -43,13 +40,10 @@ class NavigationController extends ChangeNotifier {
   void Function(double distanceMeters, Duration duration, int steps)?
       onTripComplete;
 
-  /// Fired when a trip starts, so external subsystems (e.g. GPS breadcrumb
-  /// recording) can begin. Kept as a callback so this controller stays unaware
-  /// of location — wiring lives in main.dart.
+  /// Fired when a trip starts (e.g. for GPS breadcrumb recording).
   void Function()? onTripStart;
 
-  /// True after a trip has been stopped, until it is reset or a new one starts.
-  /// Gates the "view path on map" affordance.
+  /// True after a trip is stopped, until reset or a new one starts.
   bool get tripEnded => _tripEnd != null && !tripActive;
 
   double get heading => _imu.heading;
@@ -70,14 +64,13 @@ class NavigationController extends ChangeNotifier {
     return d.isNegative ? Duration.zero : d;
   }
 
-  /// Trip-average speed in km/h (0 until the trip has covered ground).
+  /// Trip-average speed in km/h.
   double get tripSpeedKmh => speedKmh(tripDistance, tripDuration.inSeconds);
 
   /// Trip-average cadence in steps per minute.
   double get tripCadence => cadenceSpm(tripSteps, tripDuration.inSeconds);
 
-  /// Step length used to turn step counts into distance. User-calibratable so
-  /// the distance estimate matches the person actually walking.
+  /// Step length used to turn steps into distance; user-calibratable.
   double get stepLengthMeters => _imu.stepLengthMeters;
 
   void setStepLength(double meters) {
@@ -111,8 +104,7 @@ class NavigationController extends ChangeNotifier {
     _tripEnd = null;
     _tripEndSteps = null;
     tripActive = true;
-    // A 1s heartbeat keeps the on-screen duration ticking even when the user is
-    // standing still (no IMU step events to trigger a rebuild).
+    // 1s heartbeat keeps the duration ticking while standing still.
     _tripTimer?.cancel();
     _tripTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (tripActive) notifyListeners();
@@ -123,7 +115,7 @@ class NavigationController extends ChangeNotifier {
 
   void stopTrip() {
     if (!tripActive) return;
-    // Freeze the counters first so the getters report the final trip values.
+    // Freeze counters first so the getters report final values.
     _tripEnd = DateTime.now();
     _tripEndSteps = _imu.steps;
     final distance = tripDistance;
@@ -136,13 +128,12 @@ class NavigationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Resets the current trip's baseline to "now". Also zeroes the IMU step
-  /// counter so the whole-session estimate restarts cleanly.
+  /// Resets the trip baseline to now; also zeroes the IMU step counter.
   void resetTrip() {
     _imu.reset();
     _tripStartSteps = 0;
     _tripEndSteps = null;
-    // While recording, rebase to now; while stopped, clear so it reads 0.
+    // Rebase while recording; clear when stopped so it reads 0.
     _tripStart = tripActive ? DateTime.now() : null;
     _tripEnd = null;
     _onImu();

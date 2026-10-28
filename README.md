@@ -1,15 +1,12 @@
 # AetherNav Edge
 
-**An offline-first spatial mobility assistant for Android.** When GPS and the
-internet disappear, the phone falls back on its own camera, IMU, microphone and
-on-device AI to perceive the environment, track movement, answer questions and
-warn about hazards — all locally, with no account and no cloud.
+Offline-first navigation assistant for Android. When GPS and the internet go
+away it uses the camera, IMU and microphone on-device to read signs, track
+movement, answer questions and warn about hazards. No account, no cloud.
 
-> Built as a "Grand Finale" project. The four core features run 100% on-device;
-> anything that touches the network (the live map, the optional voice model
-> download) is strictly opt-in and off by default.
-
----
+Built as a Grand Finale project. The four core features run on-device. Anything
+that touches the network — the live map, the optional voice model download — is
+opt-in and off by default.
 
 ## Features
 
@@ -41,23 +38,18 @@ distance, time, steps, pace, speed and cadence. Swipe to delete.
 
 A Map tab shows your position on OpenStreetMap raster tiles with a hand-drawn
 "you are here" dot and accuracy circle (`flutter_map` + `geolocator`). This is
-the **only** feature that uses the network and location, so it stays **off until
-you enable "Live location" in Settings**.
-
-<!-- README_CONTINUE -->
+the only feature that uses the network and location, so it stays off until you
+enable "Live location" in Settings.
 
 ### Optional offline voice model (LLM)
 
-For richer voice answers you can enable an **optional, fully-offline on-device
-LLM** (llama.cpp via `llamadart`, running a ~0.8 GB Llama-3.2-1B-Instruct Q4_K_M
-GGUF, CPU inference). It acts only as a *language front-end*: the model rephrases
-facts the app already computed and is hard-constrained never to invent a place,
-direction or distance. It is **opt-in**, downloaded once in the background (or
-side-loaded from storage), and managed in **Settings → Offline AI**. With no
-model — or on any failure or timeout — voice falls back to the deterministic
-matcher, so the app always works without it.
-
----
+For richer voice answers you can enable an optional on-device LLM (llama.cpp via
+`llamadart`, running a ~0.8 GB Llama-3.2-1B-Instruct Q4_K_M GGUF on CPU). It's
+only a language front-end: it rephrases facts the app already computed, and the
+prompt forbids inventing a place, direction or distance. It downloads once in
+the background (or you can side-load a .gguf from storage) and is managed in
+Settings → Offline AI. With no model, or on any failure or timeout, voice falls
+back to the deterministic matcher, so the app works without it.
 
 ## Tech stack
 
@@ -72,10 +64,8 @@ matcher, so the app always works without it.
   (preferences), `path_provider`
 - **Optional LLM:** `llamadart`, `background_downloader`, `file_picker`
 
-`permission_handler` is intentionally pinned to `12.0.1` (>=13 forces
-compileSdk 37, which the local toolchain resolves inconsistently).
-
----
+`permission_handler` is pinned to 12.0.1: >=13 forces compileSdk 37, which the
+local toolchain resolves inconsistently.
 
 ## Getting started
 
@@ -103,19 +93,17 @@ flutter build apk --release --split-per-abi
 Install the `arm64-v8a` split, written to
 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`.
 
-> `--split-per-abi` produces one APK per ABI, each carrying only that ABI's
-> native libraries. It's the reliable way to ship an `arm64-v8a`-only build:
-> ML Kit's `.so` libraries are shipped inside its AARs for every ABI, so
-> neither `ndk.abiFilters` nor `--target-platform android-arm64` fully strips
-> the unused `armeabi-v7a` / `x86_64` copies from a universal APK — only the
-> per-ABI split does. A plain `flutter build apk --release` still works; it
-> just produces a larger universal APK.
+`--split-per-abi` produces one APK per ABI, each carrying only that ABI's native
+libraries. It's the reliable way to ship an `arm64-v8a`-only build: ML Kit's
+`.so` libraries ship inside its AARs for every ABI, so neither `ndk.abiFilters`
+nor `--target-platform android-arm64` fully strips the unused `armeabi-v7a` /
+`x86_64` copies from a universal APK — only the per-ABI split does. A plain
+`flutter build apk --release` still works; it just produces a larger universal
+APK.
 
-> The release build is currently signed with the debug key (the Flutter
-> template default) so it installs by sideloading. For Play Store distribution,
-> add your own keystore and signing config in `android/app/build.gradle.kts`.
-
-<!-- README_CONTINUE2 -->
+The release build is signed with the debug key (the Flutter template default) so
+it installs by sideloading. For Play Store distribution, add your own keystore
+and signing config in `android/app/build.gradle.kts`.
 
 ## Permissions
 

@@ -1,7 +1,6 @@
 import 'package:speech_to_text/speech_to_text.dart';
 
-/// Offline speech recognition wrapper. Prefers the on-device recognizer so it
-/// works without a network. Exposes a simple listen/stop API.
+/// speech_to_text wrapper; prefers the on-device recognizer so it works offline.
 class SpeechService {
   final SpeechToText _stt = SpeechToText();
   bool _available = false;

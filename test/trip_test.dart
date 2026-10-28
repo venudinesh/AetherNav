@@ -1,6 +1,5 @@
-// Unit tests for the pure trip math and the NavigationController's trip
-// bookkeeping. A fake IMU stands in for the on-device sensors so the trip
-// counters can be driven deterministically without booting the sensor stack.
+// Trip math and NavigationController trip counters, driven through a fake IMU so
+// the sensor stack never starts.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -13,8 +12,7 @@ import 'package:aethernav_edge/services/navigation/imu_service.dart';
 import 'package:aethernav_edge/services/voice/voice_interaction.dart';
 import 'package:aethernav_edge/state/navigation_controller.dart';
 
-/// A sensor-free IMU: [start]/[stop] are no-ops so no real streams open, and
-/// [steps]/[stepLengthMeters] are set directly by the tests.
+/// IMU that opens no streams; tests set [steps] directly.
 class _FakeImu extends ImuService {
   @override
   void start() {}
@@ -115,7 +113,7 @@ void main() {
       nav.setStepLength(0.1);
       expect(nav.stepLengthMeters, 0.4);
       nav.dispose();
-      // A fresh controller reads the persisted stride back on construction.
+      // A new controller reads the persisted stride back on construction.
       final restored = NavigationController(prefs, imu: _FakeImu());
       expect(restored.stepLengthMeters, 0.4);
       restored.dispose();
@@ -160,8 +158,8 @@ void main() {
   });
 
   group('VoiceInteraction', () {
-    // A one-landmark demo map is enough to prove small talk doesn't get treated
-    // as a place lookup, and that a real place query still resolves.
+    // One landmark is enough: small talk must not hit the place lookup, and a
+    // real place query must still resolve.
     const map = DemoMap(area: 'Test area', landmarks: [
       Landmark(
           id: 'e4', name: 'Exit 4', kind: 'exit', bearing: 90, distanceMeters: 30),

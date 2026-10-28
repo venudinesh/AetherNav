@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/detection.dart';
 
-/// Draws detection bounding boxes over the camera preview. Boxes arrive in
-/// source-image pixel coordinates and are mapped onto the preview with a cover
-/// fit (the preview fills its box the same way), so they line up regardless of
-/// the preview's aspect ratio.
+/// Detection boxes over the camera preview. Boxes arrive in source-image pixel
+/// coordinates and are mapped with the same cover fit as the preview.
 class DetectionOverlay extends StatelessWidget {
   final List<Detection> detections;
   final Size imageSize;

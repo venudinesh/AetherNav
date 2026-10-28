@@ -29,14 +29,10 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // ABI strategy: ship per-ABI release APKs with
-        // `flutter build apk --release --split-per-abi` and distribute the
-        // app-arm64-v8a-release.apk split (covers every current Android phone).
-        // We deliberately do NOT set ndk.abiFilters: it doesn't filter the
-        // prebuilt .so libs bundled inside the llama.cpp / ML Kit AARs, and it
-        // conflicts with --split-per-abi (AGP: "abiFilters cannot be present
-        // when splits abi filters are set"). A plain `flutter build apk`
-        // universal build still works — it's just larger.
+        // No ndk.abiFilters here: it can't strip the prebuilt .so files inside
+        // the llama.cpp / ML Kit AARs, and AGP rejects it when --split-per-abi
+        // sets split ABI filters. Use --split-per-abi for an arm64-only APK;
+        // a plain universal build still works, just larger.
     }
 
     buildTypes {
@@ -45,12 +41,9 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
 
-            // Keep R8 code/resource shrinking off for release. ML Kit's
-            // TextRecognizer references optional language models (Chinese,
-            // Devanagari, Japanese, Korean) we don't bundle; full-mode R8
-            // treats those missing classes as fatal and fails the build. The
-            // APK size is dominated by native .so libs (llama.cpp, ML Kit),
-            // which R8 doesn't touch, so shrinking buys little here.
+            // R8 off: ML Kit's TextRecognizer references optional language-model
+            // classes we don't bundle, and full-mode shrinking treats the missing
+            // classes as fatal. Size is dominated by native .so libs R8 can't strip.
             isMinifyEnabled = false
             isShrinkResources = false
         }

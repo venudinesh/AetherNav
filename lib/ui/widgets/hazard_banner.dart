@@ -4,10 +4,8 @@ import '../../data/models/hazard_event.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/motion.dart';
 
-/// A prominent, honest hazard banner. Colour and icon come from the semantic
-/// [StatusColors] extension so the tone always carries meaning, and there is a
-/// distinct "clear" state so the surface is never ambiguous. No gradient, no
-/// shadow theatrics (per DESIGN_RULES).
+/// Hazard banner. Colour and icon come from the [StatusColors] extension, and
+/// "clear" has its own state so the surface is never ambiguous.
 class HazardBanner extends StatelessWidget {
   final HazardEvent hazard;
   const HazardBanner({super.key, required this.hazard});

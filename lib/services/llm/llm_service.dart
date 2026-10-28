@@ -2,25 +2,17 @@ import 'dart:async';
 
 import 'package:llamadart/llamadart.dart';
 
-/// Thin wrapper over llamadart (llama.cpp / GGUF) for the offline voice
-/// assistant. One model, one context; the caller serialises requests.
-///
-/// Inference is an *enhancement*, never a hard dependency: every failure path
-/// returns null so the deterministic voice matcher answers instead. This class
-/// never throws to its caller.
+/// llama.cpp (GGUF) wrapper for the voice assistant. never throws to the
+/// caller — any failure returns null and the deterministic matcher answers.
 class LlmService {
   LlamaEngine? _engine;
   bool _generating = false;
 
   bool get isLoaded => _engine?.isReady ?? false;
 
-  /// Load a GGUF model from a filesystem [path]. Disposes any previous engine
-  /// first — llamadart's [LlamaEngine.loadModel] throws if a model is already
-  /// loaded.
-  ///
-  /// CPU-only: llamadart's [ModelParams.gpuLayers] defaults to 999 (offload
-  /// everything to the GPU), which crashes on devices with a driver llama.cpp
-  /// dislikes, so 0 is passed explicitly — reliable on every device.
+  /// loads a GGUF model; disposes the previous engine first (loadModel throws
+  /// if one is already loaded).
+  /// cpu-only: gpuLayers defaults to 999, which crashes on some drivers.
   Future<void> load(String path, {int contextSize = 2048}) async {
     await unload();
     final engine = LlamaEngine(LlamaBackend());
@@ -31,20 +23,16 @@ class LlmService {
         modelParams: ModelParams(gpuLayers: 0, contextSize: contextSize),
       );
     } catch (_) {
-      await engine.dispose(); // don't leak the native engine on a failed load
-      rethrow; // inject() catches this and shows the load-failed state
+      await engine.dispose(); // don't leak the native engine
+      rethrow; // caller shows the load-failed state
     }
     _engine = engine;
   }
 
-  /// One-shot grounded generation. [prompt] is the fully-built grounded prompt
-  /// (rules + facts + question) from the voice layer.
-  ///
-  /// Returns the model's answer, or null on any failure / timeout / empty
-  /// output / not-loaded / busy — the caller then falls back to the
-  /// deterministic matcher. [prompt] is sanitised here (NUL/control strip +
-  /// length cap): the trust boundary before external text (the recognised
-  /// voice query is embedded in it) reaches the native tokenizer.
+  /// one-shot generation from a pre-built prompt.
+  /// returns null on any failure/timeout/empty so the caller falls back.
+  /// sanitises the prompt here: the voice query is embedded in it and goes
+  /// straight to the native tokenizer.
   Future<String?> generate(
     String prompt, {
     Duration timeout = const Duration(seconds: 20),
@@ -70,10 +58,8 @@ class LlmService {
         if (text != null) buffer.write(text);
       }
     } catch (_) {
-      // LlamaException family, TimeoutException, anything: the deterministic
-      // fallback handles it. Cancel so a stalled/timed-out generation stops
-      // burning CPU in the background — guarded so a throwing cancel can't
-      // break this method's "never throw to the caller" contract.
+      // any failure -> deterministic fallback. cancel so a stalled generation
+      // stops burning cpu; guard the cancel to keep the never-throw contract.
       try {
         engine.cancelGeneration();
       } catch (_) {}
@@ -85,16 +71,14 @@ class LlmService {
     return out.isEmpty ? null : out;
   }
 
-  /// Free the model + native context. Safe to call when nothing is loaded.
   Future<void> unload() async {
     final engine = _engine;
     _engine = null;
     if (engine != null) await engine.dispose();
   }
 
-  // Real-world text (voice recognition output, junk) can carry NUL bytes and
-  // control chars that crash the native tokenizer, and unbounded length. Strip
-  // and cap before anything reaches llama.cpp. Keeps \t \n \r.
+  // NUL/control chars crash the native tokenizer; strip them (keep \t \n \r)
+  // and cap length.
   static const int _maxPromptChars = 8192;
 
   static String _sanitize(String input) {

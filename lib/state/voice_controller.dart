@@ -5,7 +5,7 @@ import '../services/voice/speech_service.dart';
 import '../services/voice/tts_service.dart';
 import '../services/voice/voice_interaction.dart';
 
-/// Coordinates speech-to-text, the on-device query resolver, and text-to-speech.
+/// Coordinates speech-to-text, query resolution, and text-to-speech.
 class VoiceController extends ChangeNotifier {
   final SpeechService speech;
   final TtsService tts;
@@ -15,6 +15,7 @@ class VoiceController extends ChangeNotifier {
 
   bool ready = false;
   bool listening = false;
+  bool _initializingSpeech = false;
   String heardText = '';
   String? answer;
   String? error;
@@ -25,16 +26,31 @@ class VoiceController extends ChangeNotifier {
   /// Set by the app to log each question/answer exchange.
   void Function(String question, String answer)? onExchange;
 
-  /// Optional grounded offline-LLM front-end, set by the app. Given a fully
-  /// built grounded prompt it returns a spoken answer, or null on any failure /
-  /// timeout / when no model is loaded — the deterministic matcher then answers.
+  /// Optional offline-LLM generator. Takes a grounded prompt, returns a spoken
+  /// answer or null; on null the deterministic matcher answers.
   Future<String?> Function(String prompt)? llmGenerate;
 
-  Future<void> init(DemoMap map) async {
+  /// Set the demo map so typed questions and answers work without touching the
+  /// mic. Safe to call at boot (no permission prompt).
+  void setMap(DemoMap map) {
     _interaction = VoiceInteraction(map);
+    notifyListeners();
+  }
+
+  /// Initialise speech recognition — this is what requests the mic on Android.
+  /// Idempotent; called when the Voice tab opens, not at app launch.
+  Future<void> ensureSpeech() async {
+    if (ready || _initializingSpeech) return;
+    _initializingSpeech = true;
     ready = await speech.init();
     if (!ready) error = speech.lastError ?? 'Speech recognition is unavailable';
+    _initializingSpeech = false;
     notifyListeners();
+  }
+
+  Future<void> init(DemoMap map) async {
+    setMap(map);
+    await ensureSpeech();
   }
 
   Future<void> toggleListen() async {
@@ -70,6 +86,10 @@ class VoiceController extends ChangeNotifier {
     await _resolve(text);
   }
 
+  /// Read [text] aloud. Honors the spoken-announcements setting (TtsService
+  /// no-ops when disabled). Used by tap-to-speak controls elsewhere in the app.
+  Future<void> speak(String text) => tts.speak(text);
+
   Future<void> _resolve(String text) async {
     listening = false;
     final interaction = _interaction;
@@ -81,9 +101,7 @@ class VoiceController extends ChangeNotifier {
     }
     final h = headingProvider?.call() ?? 0;
 
-    // Grounded LLM first — it only rephrases the facts buildPrompt injects. On
-    // null / timeout / empty / no-model, the deterministic matcher answers, so
-    // the assistant never depends on inference and never hangs the mic.
+    // Try the LLM first; on null/empty/timeout the matcher answers.
     String? spoken;
     final gen = llmGenerate;
     if (gen != null && text.trim().isNotEmpty) {

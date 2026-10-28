@@ -5,7 +5,7 @@ import '../data/models/trip_log.dart';
 
 enum LoadStatus { loading, ready, error }
 
-/// Owns the local trip/hazard/voice log. Reads from and writes to [AppDatabase].
+/// The local trip/hazard/voice log, backed by [AppDatabase].
 class LogController extends ChangeNotifier {
   final AppDatabase _db;
   LogController(this._db);
@@ -41,7 +41,7 @@ class LogController extends ChangeNotifier {
       counts = {...counts, type.name: (counts[type.name] ?? 0) + 1};
       notifyListeners();
     } catch (_) {
-      // Logging must never break the live experience.
+      // Logging failures shouldn't break the app.
     }
   }
 

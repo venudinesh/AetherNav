@@ -6,14 +6,12 @@ import 'package:provider/provider.dart';
 import '../../state/location_controller.dart';
 import '../../state/settings_controller.dart';
 
-/// The live map: OpenStreetMap raster tiles with a hand-drawn "you are here"
-/// dot (an accuracy circle + a marker) driven by [LocationController]. Unlike
-/// the rest of the app this uses GPS and downloads tiles when online, so it
-/// stays OFF until the user enables live location.
+/// Live map: OpenStreetMap tiles plus a "you are here" dot. Needs GPS and
+/// network, so it only renders while live location is on.
 ///
-/// The blue dot is drawn manually (CircleLayer + MarkerLayer) rather than via
-/// flutter_map_location_marker, which pins older flutter_map / latlong2 and
-/// would drag the whole map stack backwards.
+/// The dot is hand-drawn (CircleLayer + MarkerLayer);
+/// flutter_map_location_marker pins an older flutter_map / latlong2 and would
+/// downgrade the whole map stack.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
   @override
@@ -41,10 +39,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// Coming back from the OS location/permission settings screen: re-attempt the
-  /// GPS stream so turning on location there takes effect without toggling the
-  /// app's own switch off and on. retry() is idempotent — a no-op while already
-  /// streaming.
+  /// Resuming after the user changed location settings in the OS: restart the
+  /// GPS stream. retry() is a no-op while already streaming.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
@@ -66,7 +62,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final p = loc.position;
     final here = p != null ? LatLng(p.latitude, p.longitude) : null;
 
-    // Follow-me: recenter on each new fix while "keep centred" is on.
+    // Recenter on each new fix while follow is on.
     if (here != null &&
         settings.followLocation &&
         _ready &&
@@ -94,8 +90,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ],
       ),
       body: Stack(children: [
-        // The map downloads OSM tiles over the network, so it only renders once
-        // the user opts into live location — otherwise the tab stays offline.
+        // OSM tiles come over the network, so the map only renders once the
+        // user opts into live location.
         if (settings.liveLocation)
           _map(here, p?.accuracy ?? 0)
         else
@@ -112,8 +108,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Shown in place of the map while live location is off, so the tab isn't a
-  /// blank void and no tiles are fetched. The banner on top offers "Turn on".
+  /// Stands in for the map while live location is off, so no tiles are fetched.
   Widget _offlinePlaceholder(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
@@ -184,7 +179,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     if (!settings.liveLocation) {
       return _Banner(
         icon: Icons.location_off,
-        text: 'Live location is off. Turn it on to see your position.',
+        text: 'Live location is off.',
         actionLabel: 'Turn on',
         onAction: () =>
             context.read<SettingsController>().setLiveLocation(true),
@@ -205,14 +200,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       case LocationStatus.deniedForever:
         return _Banner(
           icon: Icons.location_disabled,
-          text: 'Location permission is blocked. Enable it in system settings.',
+          text: 'Location permission blocked in system settings.',
           actionLabel: 'Open settings',
           onAction: loc.openAppSettings,
         );
       case LocationStatus.serviceOff:
         return _Banner(
           icon: Icons.gps_off,
-          text: 'Device location services are off.',
+          text: 'Location services are off.',
           actionLabel: 'Open settings',
           onAction: loc.openLocationSettings,
         );
@@ -234,8 +229,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 }
 
-/// The "you are here" dot: a filled circle with a white ring, matching common
-/// map conventions.
 class _Dot extends StatelessWidget {
   final Color color;
   const _Dot({required this.color});
@@ -257,8 +250,7 @@ class _Dot extends StatelessWidget {
   }
 }
 
-/// A top-of-map status banner explaining why there's no live position, with an
-/// optional action (turn on / try again / open settings).
+/// Status strip over the map, with an optional action.
 class _Banner extends StatelessWidget {
   final IconData icon;
   final String text;

@@ -1,8 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
-/// Pure, dependency-light trip helpers shared by the Trip screens and covered by
-/// unit tests. Keeping them here (not private to a widget) is what makes the
-/// distance/direction/format logic testable without booting the UI.
+/// Pure trip helpers, kept out of the widgets so they're unit-testable.
 
 /// `mm:ss`, or `h:mm:ss` once the duration passes an hour.
 String formatDuration(Duration d) {

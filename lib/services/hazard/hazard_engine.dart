@@ -1,9 +1,7 @@
 import '../../data/models/detection.dart';
 import '../../data/models/hazard_event.dart';
 
-/// Pure rules that turn the current frame's detections into a single hazard.
-/// Deliberately simple and explainable (no unverified ML claims): the demo warns
-/// about stairs, obstacles, and doorways detected close/ahead.
+/// rules: detections -> worst single hazard (stairs/obstacles/doors).
 class HazardEngine {
   HazardEvent evaluate(List<Detection> detections) {
     var worst = HazardEvent.clear();

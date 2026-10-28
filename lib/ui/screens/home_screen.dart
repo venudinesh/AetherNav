@@ -5,12 +5,10 @@ import '../../data/models/hazard_event.dart';
 import '../../state/llm_controller.dart';
 import '../../state/navigation_controller.dart';
 import '../../state/perception_controller.dart';
+import '../../state/settings_controller.dart';
 import '../widgets/status_chip.dart';
 import 'local_llm_screen.dart';
 
-/// The dashboard: brand header, a live status summary, and entry points to the
-/// four features. Feature rows are a plain vertical list (not a decorative
-/// icon-card grid) so each row is a real, tappable destination.
 class HomeScreen extends StatelessWidget {
   final void Function(int tabIndex) onNavigate;
   final VoidCallback onOpenSettings;
@@ -42,12 +40,14 @@ class _HomeBody extends StatelessWidget {
   final void Function(int tabIndex) onNavigate;
   const _HomeBody({required this.onNavigate});
 
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        const _IntroCard(),
         const _Hero(),
         const SizedBox(height: 20),
         const _LlmDownloadCard(),
@@ -62,7 +62,7 @@ class _HomeBody extends StatelessWidget {
         _FeatureTile(
           icon: Icons.center_focus_strong_outlined,
           title: 'Camera perception',
-          subtitle: 'Read signs and spot obstacles, fully offline',
+          subtitle: 'Read signs and obstacles, offline',
           onTap: () => onNavigate(1),
         ),
         _FeatureTile(
@@ -100,7 +100,6 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        // The single sanctioned decorative gradient: the brand mark.
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -117,8 +116,8 @@ class _Hero extends StatelessWidget {
         ]),
         const SizedBox(height: 10),
         Text(
-          'On-device help for reading your surroundings, staying oriented, '
-          'and avoiding hazards — plus an optional live map.',
+          'On-device sign reading, orientation and hazard alerts, '
+          'with an optional live map.',
           style: t.bodyMedium?.copyWith(color: Colors.white70),
         ),
       ]),
@@ -126,10 +125,73 @@ class _Hero extends StatelessWidget {
   }
 }
 
-/// A slim Home-screen card that surfaces the offline voice-model download:
-/// live progress while it downloads/verifies, then a one-time "ready" note the
-/// user dismisses. Hidden (zero height) otherwise, so Home is unchanged when no
-/// download is happening. Tapping opens the Offline AI screen.
+/// First-run orientation card. Sets honest expectations, then hides forever
+/// once dismissed (persisted via SettingsController.introSeen).
+class _IntroCard extends StatelessWidget {
+  const _IntroCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = context.watch<SettingsController>();
+    if (settings.introSeen) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(Icons.waving_hand_outlined, color: scheme.primary),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Getting your bearings', style: t.titleMedium)),
+              ]),
+              const SizedBox(height: 10),
+              for (final line in const [
+                'Camera, trip and voice all run on this device, no internet needed.',
+                'Distance comes from counting steps, so it drifts over time — '
+                    'it is a guide, not a replacement for GPS.',
+                'The live map and your location stay off until you turn them on '
+                    'in Settings.',
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, right: 8),
+                        child: Icon(Icons.circle,
+                            size: 6, color: scheme.onSurfaceVariant),
+                      ),
+                      Expanded(
+                        child: Text(line,
+                            style: t.bodyMedium
+                                ?.copyWith(color: scheme.onSurfaceVariant)),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: () => settings.setIntroSeen(true),
+                  child: const Text('Got it'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Voice-model download card. Zero height when there is no download.
 class _LlmDownloadCard extends StatelessWidget {
   const _LlmDownloadCard();
 
@@ -167,7 +229,7 @@ class _LlmDownloadCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Voice model ready', style: t.titleSmall),
-                      Text('Tap to manage it in Offline AI.',
+                      Text('Manage it in Offline AI.',
                           style: t.bodySmall
                               ?.copyWith(color: scheme.onSurfaceVariant)),
                     ]),
@@ -187,7 +249,7 @@ class _LlmDownloadCard extends StatelessWidget {
       final paused = llm.status == LlmStatus.paused;
       final pct = (llm.progress.clamp(0, 1) * 100).round();
       final label = verifying
-          ? 'Finishing up…'
+          ? 'Verifying…'
           : paused
               ? 'Download paused · $pct%'
               : 'Downloading voice model · $pct%';
@@ -361,7 +423,7 @@ class _OfflineNote extends StatelessWidget {
       Expanded(
         child: Text(
           'Perception, orientation and voice run on-device. The map uses GPS '
-          'and downloads map tiles when you turn on live location.',
+          'and downloads tiles when live location is on.',
           style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ),

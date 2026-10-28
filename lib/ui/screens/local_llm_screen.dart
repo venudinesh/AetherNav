@@ -4,10 +4,8 @@ import 'package:provider/provider.dart';
 import '../../state/llm_controller.dart';
 import '../../state/settings_controller.dart';
 
-/// Manages the optional offline voice-assistant model: download the recommended
-/// Llama-3.2-1B, side-load a `.gguf`, and load/eject it. Reached from Settings →
-/// Offline AI. Inference is an enhancement — with no model the deterministic
-/// matcher answers, so nothing here is required for the app to work.
+/// Offline model management: download, import a `.gguf`, load and eject. With no
+/// model the deterministic matcher answers, so nothing here is required.
 class LocalLlmScreen extends StatelessWidget {
   const LocalLlmScreen({super.key});
 
@@ -32,8 +30,7 @@ class LocalLlmScreen extends StatelessWidget {
       ),
     );
   }
-  /// Actions relevant to the current status. Download/pause/resume/cancel run
-  /// the model download; load/eject manage the native engine.
+
   List<Widget> _actions(BuildContext context, LlmController llm) {
     final read = context.read<LlmController>();
     final hasModel = llm.modelPath != null;
@@ -47,7 +44,7 @@ class LocalLlmScreen extends StatelessWidget {
           subtitle: 'Enable the local voice model.',
           onTap: () => context.read<SettingsController>().setUseLocalLlm(true),
         ));
-        return out; // nothing else is actionable while the feature is off
+        return out; // nothing actionable while the feature is off
       case LlmStatus.downloading:
         out.add(_ActionCard(
             icon: Icons.pause, title: 'Pause download', onTap: read.pause));
@@ -69,7 +66,7 @@ class LocalLlmScreen extends StatelessWidget {
         out.add(_ActionCard(
           icon: Icons.play_circle_outline,
           title: 'Load model',
-          subtitle: 'Load it into memory to start answering.',
+          subtitle: 'Loads it into memory so answers use it.',
           onTap: read.inject,
         ));
       case LlmStatus.error:
@@ -104,9 +101,8 @@ class LocalLlmScreen extends StatelessWidget {
     return out;
   }
 }
-/// The status header: an icon + title + one-line explanation, with a progress
-/// bar while a download runs (determinate) or the file settles / loads
-/// (indeterminate). Mirrors the map screen's status banner idiom.
+
+/// Status header, with a progress bar while downloading, verifying or loading.
 class _StatusCard extends StatelessWidget {
   final LlmController llm;
   const _StatusCard({required this.llm});
@@ -173,25 +169,25 @@ class _StatusCard extends StatelessWidget {
         return (
           Icons.downloading_outlined,
           'Downloading model…',
-          '${(llm.progress * 100).round()}% · keep using the app while it downloads.'
+          '${(llm.progress * 100).round()}% · downloads in the background.'
         );
       case LlmStatus.paused:
         return (
           Icons.pause_circle_outline,
           'Download paused',
-          'Resume to finish downloading the model.'
+          'Resume to continue.'
         );
       case LlmStatus.verifying:
         return (
           Icons.hourglass_bottom,
           'Finishing up…',
-          'Settling the model file into place.'
+          'Placing the model file.'
         );
       case LlmStatus.present:
         return (
           Icons.inventory_2_outlined,
           'Model ready to load',
-          llm.modelName ?? 'A model file is set.'
+          llm.modelName ?? 'Model file on disk.'
         );
       case LlmStatus.loading:
         return (
@@ -208,14 +204,13 @@ class _StatusCard extends StatelessWidget {
       case LlmStatus.error:
         return (
           Icons.error_outline,
-          'Something went wrong',
-          llm.error ?? 'Please retry.'
+          'Model error',
+          llm.error ?? 'Try again.'
         );
     }
   }
 }
 
-/// Shows where the active model file lives on disk.
 class _PathCard extends StatelessWidget {
   final String path;
   const _PathCard({required this.path});
@@ -239,7 +234,6 @@ class _PathCard extends StatelessWidget {
   }
 }
 
-/// A tappable action row.
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -265,8 +259,6 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
-/// The honest footer: the model only rephrases, never invents, and voice always
-/// works without it.
 class _AboutNote extends StatelessWidget {
   const _AboutNote();
   @override
@@ -278,9 +270,9 @@ class _AboutNote extends StatelessWidget {
       const SizedBox(width: 8),
       Expanded(
         child: Text(
-          'The offline model only rephrases facts the app already computes — it '
-          'never invents places or directions. If it is unavailable, the '
-          'built-in matcher answers instead, so voice always works.',
+          'The model only rephrases facts the app already worked out; it never '
+          'invents places or directions. Without it, the built-in matcher '
+          'answers.',
           style: t.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ),

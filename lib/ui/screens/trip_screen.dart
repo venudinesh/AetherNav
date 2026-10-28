@@ -8,14 +8,12 @@ import '../../data/models/trip_record.dart';
 import '../../state/location_controller.dart';
 import '../../state/navigation_controller.dart';
 import '../../state/trips_controller.dart';
+import '../../state/voice_controller.dart';
 import '../widgets/app_states.dart';
 import '../widgets/status_chip.dart';
 import 'trip_path_screen.dart';
 
-/// The Trip screen: a user-started span with a live distance, duration and step
-/// count, plus the offline compass heading and the nearest known landmarks.
-/// This is controlled-area dead-reckoning (IMU + step estimate), not GPS — the
-/// copy stays honest about that.
+/// Dead-reckoning (IMU + step estimate), not GPS.
 class TripScreen extends StatefulWidget {
   const TripScreen({super.key});
   @override
@@ -93,9 +91,7 @@ class _TripContent extends StatelessWidget {
   }
 }
 
-/// The saved-trip history (Strava-style), newest first. Hidden when empty. Tap
-/// a trip to replay it; swipe to delete. Trips are numbered oldest-first so
-/// "Trip 1" is always the user's first recorded trip.
+/// Past trips, newest first. Numbered oldest-first, so "Trip 1" is the first trip.
 class _PastTrips extends StatelessWidget {
   const _PastTrips();
   @override
@@ -167,7 +163,7 @@ class _PastTripTile extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete trip?'),
-        content: const Text('This removes the saved trip permanently.'),
+        content: const Text('This can\'t be undone.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -281,8 +277,8 @@ class _TripCard extends StatelessWidget {
               )
             else
               Text(
-                'No path to map — turn on Live location before your trip to '
-                'record it here.',
+                'No path recorded. Turn on Live location before a trip to '
+                'record it.',
                 style: t.bodySmall
                     ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
@@ -395,8 +391,8 @@ class _StrideCard extends StatelessWidget {
             onChanged: nav.setStepLength,
           ),
           Text(
-            'Calibrate to your own stride so the distance estimate stays honest. '
-            'A typical adult stride is 0.65–0.80 m.',
+            'Set your stride length for accurate distance. '
+            'Typical adult stride: 0.65–0.80 m.',
             style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ]),
@@ -419,31 +415,43 @@ class _LandmarkTile extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final rel = relativeDirection(landmark.bearing, heading);
+    final dist = landmark.distanceMeters.round();
+    final spoken = '${landmark.name}. $rel, about $dist metres.';
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          Icon(_iconFor(landmark.kind), color: scheme.onSurfaceVariant),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Flexible(child: Text(landmark.name, style: t.titleMedium)),
-                    if (nearest) ...[
-                      const SizedBox(width: 8),
-                      const StatusChip(label: 'Nearest', tone: StatusTone.info),
-                    ],
-                  ]),
-                  const SizedBox(height: 2),
-                  Text('$rel · ${landmark.distanceMeters.toStringAsFixed(0)} m',
-                      style:
-                          t.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
-                ]),
+      // Tap to hear the direction read aloud (respects the spoken-announcements
+      // setting). Whole row is the target; labelled for screen readers.
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.read<VoiceController>().speak(spoken),
+        child: Semantics(
+          button: true,
+          label: 'Read out ${landmark.name}',
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(children: [
+              Icon(_iconFor(landmark.kind), color: scheme.onSurfaceVariant),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Flexible(child: Text(landmark.name, style: t.titleMedium)),
+                        if (nearest) ...[
+                          const SizedBox(width: 8),
+                          const StatusChip(label: 'Nearest', tone: StatusTone.info),
+                        ],
+                      ]),
+                      const SizedBox(height: 2),
+                      Text('$rel · ${landmark.distanceMeters.toStringAsFixed(0)} m',
+                          style: t.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant)),
+                    ]),
+              ),
+            ]),
           ),
-        ]),
+        ),
       ),
     );
   }

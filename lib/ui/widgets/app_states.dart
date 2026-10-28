@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Shown while a screen or list is loading its first data.
 class LoadingState extends StatelessWidget {
   final String? message;
   const LoadingState({super.key, this.message});
@@ -25,7 +24,6 @@ class LoadingState extends StatelessWidget {
   }
 }
 
-/// Shown when a list is genuinely empty (distinct from an error).
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -58,7 +56,6 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Shown when something failed. Offers a retry whenever [onRetry] is provided.
 class ErrorState extends StatelessWidget {
   final String title;
   final String message;
@@ -99,6 +96,20 @@ class _Centered extends StatelessWidget {
   final Widget child;
   const _Centered({required this.child});
   @override
-  Widget build(BuildContext context) =>
-      Center(child: Padding(padding: const EdgeInsets.all(32), child: child));
+  Widget build(BuildContext context) {
+    // Center vertically when there's room, but scroll when the content is
+    // taller than the viewport (e.g. landscape), so the action button can never
+    // be pushed off-screen / out of its tap area.
+    return LayoutBuilder(builder: (context, constraints) {
+      return SingleChildScrollView(
+        // Extra bottom padding keeps the action button clear of the nav bar in
+        // short (landscape) viewports.
+        padding: const EdgeInsets.fromLTRB(32, 24, 32, 56),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(child: child),
+        ),
+      );
+    });
+  }
 }

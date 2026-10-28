@@ -15,10 +15,8 @@ import '../services/perception/text_recognizer_service.dart';
 
 enum PerceptionStatus { idle, initializing, running, error }
 
-/// Owns the offline camera perception pipeline: capture a still, run OCR +
-/// object detection, classify the frame, derive a hazard, and expose the result
-/// to the UI. Alerts (haptics/voice) and logging are delegated via callbacks so
-/// this controller stays independent of those subsystems.
+/// Camera perception pipeline: capture a still, run OCR + object detection,
+/// derive a hazard. Alerts and logging go out via callbacks.
 class PerceptionController extends ChangeNotifier {
   final CameraService camera = CameraService();
   final ObjectDetectorService _objects = ObjectDetectorService();
@@ -35,10 +33,17 @@ class PerceptionController extends ChangeNotifier {
   bool _busy = false;
   Set<String> _lastSignKeys = {};
 
-  /// Fired when the hazard level rises into an alert state (warning/danger).
+  // A hazard that stays in frame should keep warning, not fire once and go
+  // silent. Re-alert while it persists, but no faster than this so it doesn't
+  // nag. Cleared whenever the path drops below alert level, to re-arm.
+  static const _kAlertRepeat = Duration(seconds: 6);
+  DateTime? _lastAlertAt;
+
+  /// Fired when the hazard level rises into an alert state, and periodically
+  /// while an alert-level hazard persists.
   void Function(HazardEvent hazard)? onHazard;
 
-  /// Fired when a new notable sign/landmark is recognised (for the trip log).
+  /// Fired when a new notable sign/landmark is recognised.
   void Function(Detection detection)? onDetection;
 
   Future<void> start() async {
@@ -70,15 +75,15 @@ class PerceptionController extends ChangeNotifier {
     detections = const [];
     hazard = HazardEvent.clear();
     _lastSignKeys = {};
+    _lastAlertAt = null;
     if (status != PerceptionStatus.error) status = PerceptionStatus.idle;
     _busy = false;
     notifyListeners();
   }
 
-  /// Whether the torch is currently lit (reflected by the camera settings UI).
+  /// Whether the torch is lit.
   bool get torchOn => camera.torchOn;
 
-  /// Toggles the rear torch and refreshes the UI.
   Future<void> toggleTorch() async {
     await camera.toggleTorch();
     notifyListeners();
@@ -102,15 +107,23 @@ class PerceptionController extends ChangeNotifier {
       final hz = _hazards.evaluate(detections);
       final rising = hz.level.index > hazard.level.index;
       hazard = hz;
-      if (rising && hz.level.shouldAlert) onHazard?.call(hz);
+      if (hz.level.shouldAlert) {
+        final since =
+            _lastAlertAt == null ? null : DateTime.now().difference(_lastAlertAt!);
+        if (rising || since == null || since >= _kAlertRepeat) {
+          onHazard?.call(hz);
+          _lastAlertAt = DateTime.now();
+        }
+      } else {
+        _lastAlertAt = null; // path clear: re-arm for the next hazard
+      }
 
       _logNewSigns(detections);
       notifyListeners();
     } catch (_) {
-      // A single bad frame must never stop the pipeline.
+      // One bad frame shouldn't stop the pipeline.
     } finally {
-      // Always delete the temp frame — even if the pipeline threw — so captures
-      // can't accumulate on disk over a long session.
+      // Always delete the temp frame so captures don't pile up on disk.
       if (path != null) _deleteQuietly(path);
       _busy = false;
     }

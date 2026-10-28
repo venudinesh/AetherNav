@@ -1,8 +1,7 @@
 import 'package:flutter_tts/flutter_tts.dart';
 
-/// Offline text-to-speech for guidance and hazard warnings. Uses the device's
-/// on-board TTS engine (no network). All calls are guarded so a missing engine
-/// never crashes the app.
+/// on-device tts for guidance/hazard speech; calls guarded so a missing
+/// engine can't crash the app.
 class TtsService {
   final FlutterTts _tts = FlutterTts();
   bool enabled = true;

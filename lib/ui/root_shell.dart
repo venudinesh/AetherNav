@@ -12,10 +12,7 @@ import 'screens/settings_screen.dart';
 import 'screens/trip_screen.dart';
 import 'screens/voice_screen.dart';
 
-/// The app frame: a bottom [NavigationBar] over a body that is swapped (not
-/// stacked) so leaving the camera tab disposes [PerceptionScreen] and releases
-/// the camera. When Liquid Glass is enabled the bar becomes a translucent,
-/// blurred surface; otherwise it stays opaque for maximum legibility.
+/// Body is swapped, not stacked, so leaving the camera tab releases the camera.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
   @override
@@ -28,8 +25,8 @@ class _RootShellState extends State<RootShell> {
   @override
   void initState() {
     super.initState();
-    // First launch only: offer the one-time offline-model download. Gated on a
-    // persisted flag so it never nags. Post-frame so the dialog has a Navigator.
+    // First-launch offer of the offline model download. Post-frame so the
+    // dialog has a Navigator.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final settings = context.read<SettingsController>();
@@ -41,18 +38,17 @@ class _RootShellState extends State<RootShell> {
     final choice = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Download the offline voice model?'),
+        title: const Text('Download offline voice model?'),
         content: const Text(
-            'A one-time ~0.8 GB download lets the voice assistant answer more '
-            'naturally, fully offline. It downloads in the background — you can '
-            'keep using the app. You can also do this later in Settings.'),
+            'About 0.8 GB, once. The assistant answers more naturally and stays '
+            'fully offline. Runs in the background.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: const Text('Not now')),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Download in background')),
+              child: const Text('Download')),
         ],
       ),
     );

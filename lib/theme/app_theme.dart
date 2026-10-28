@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
-/// Builds the Material 3 light/dark themes from a single indigo seed with a teal
-/// accent, wires the locally-bundled Inter / Inter Tight variable fonts (tabular
-/// figures on by default), and attaches the semantic [StatusColors] extension.
+/// Material 3 light/dark themes: indigo seed, teal accent, bundled Inter fonts,
+/// plus the [StatusColors] extension.
 class AppTheme {
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
     final base = ColorScheme.fromSeed(seedColor: kIndigoSeed, brightness: brightness);
-    // Teal supplies the accent (secondary + tertiary) roles. Taking them from a
-    // teal fromSeed keeps M3's AA-aware on-color pairings intact.
+    // Teal supplies the secondary and tertiary roles.
     final teal = ColorScheme.fromSeed(seedColor: kTealSeed, brightness: brightness);
     final scheme = base.copyWith(
       secondary: teal.primary,

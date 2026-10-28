@@ -6,8 +6,8 @@ class VoiceAnswer {
   const VoiceAnswer(this.spoken);
 }
 
-/// Resolves local navigation questions ("Where is Exit 4?") against the demo map
-/// using the current heading. Entirely on-device string matching, no cloud NLU.
+/// Resolves local navigation questions ("Where is Exit 4?") against the demo
+/// map using the current heading. On-device string matching, no NLU.
 class VoiceInteraction {
   final DemoMap map;
   const VoiceInteraction(this.map);
@@ -64,10 +64,9 @@ class VoiceInteraction {
   String _firstName() =>
       map.landmarks.isEmpty ? 'the exit' : map.landmarks.first.name;
 
-  /// Light conversational replies for greetings and meta questions, so a plain
-  /// "hello" isn't met with a navigation error. Returns null when the query
-  /// isn't small talk, so the caller falls through to the honest fallback. Only
-  /// reached when no landmark matched, so it can't shadow a real place.
+  /// Greetings and meta questions get a conversational reply instead of a
+  /// navigation error. Only reached when no landmark matched. Returns null for
+  /// non-small-talk so the caller falls through to the honest fallback.
   String? _smallTalk(String q) {
     final words = q.split(RegExp(r'[^a-z]+')).toSet();
     bool has(Set<String> s) => words.intersection(s).isNotEmpty;

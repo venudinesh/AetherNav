@@ -6,8 +6,7 @@ import '../../state/log_controller.dart';
 import '../widgets/app_states.dart';
 import '../widgets/status_chip.dart';
 
-/// The local trip log: a plain, honest record of detections, hazards, voice
-/// exchanges and session events. Reads from the on-device SQLite store.
+/// Entries come from the on-device SQLite store.
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
   @override
@@ -27,7 +26,7 @@ class _LogsScreenState extends State<LogsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear trip log?'),
-        content: const Text('This permanently removes all recorded entries.'),
+        content: const Text('Deletes every recorded entry.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -64,10 +63,10 @@ class _LogsScreenState extends State<LogsScreen> {
   Widget _body(BuildContext context, LogController log) {
     switch (log.status) {
       case LoadStatus.loading:
-        return const LoadingState(message: 'Loading your trip log…');
+        return const LoadingState(message: 'Loading trip log…');
       case LoadStatus.error:
         return ErrorState(
-          message: log.error ?? 'The trip log could not be loaded.',
+          message: log.error ?? 'Could not load the trip log.',
           onRetry: log.load,
         );
       case LoadStatus.ready:
@@ -75,9 +74,7 @@ class _LogsScreenState extends State<LogsScreen> {
           return const EmptyState(
             icon: Icons.receipt_long_outlined,
             title: 'No entries yet',
-            message:
-                'Detections, hazard alerts and voice questions will appear here '
-                'as you use the app.',
+            message: 'Detections, hazards and voice questions appear here.',
           );
         }
         return _LogList(log: log);

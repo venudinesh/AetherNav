@@ -1,7 +1,7 @@
-// Tests for the offline-LLM voice seam: the grounded prompt builder is pure and
-// must carry the facts + rules + question, and VoiceController must fall back to
-// the deterministic matcher whenever the LLM callback yields nothing (null,
-// empty, or throwing) — inference is an enhancement, never a dependency.
+// Offline LLM voice seam. buildPrompt is pure and must carry the facts, the
+// grounding rules (use only the facts, never invent) and the question.
+// VoiceController must fall back to the deterministic matcher whenever the LLM
+// callback returns null, empty or throws: inference is optional, never required.
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,7 +23,7 @@ const _map = DemoMap(area: 'Test area', landmarks: [
       id: 'st', name: 'Stairs', kind: 'stairs', bearing: 90, distanceMeters: 30),
 ]);
 
-/// Sensor-free doubles so no plugin/platform channel is touched in the test VM.
+/// Doubles that touch no plugin or platform channel.
 class _FakeSpeech extends SpeechService {
   @override
   Future<bool> init() async => true;

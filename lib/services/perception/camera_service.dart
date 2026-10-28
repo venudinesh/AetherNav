@@ -1,13 +1,10 @@
 import 'package:camera/camera.dart';
 
-/// Owns the camera lifecycle. Keeps a live preview running and grabs discrete
-/// still frames on demand for the perception pipeline (robust across devices,
-/// no image-stream YUV handling).
+/// Owns the camera; grabs still JPEG frames for the perception pipeline.
 class CameraService {
   CameraController? controller;
 
-  /// Whether the torch (rear flash LED) is currently lit. Kept here so the UI
-  /// can reflect it without reaching into the camera plugin's value.
+  // mirrored so the UI doesn't have to poke the plugin's value
   bool torchOn = false;
 
   bool get isReady => controller?.value.isInitialized ?? false;
@@ -29,12 +26,10 @@ class CameraService {
     );
     await c.initialize();
     controller = c;
-    torchOn = false; // fresh controller starts with the torch off
+    torchOn = false;
   }
 
-  /// Turns the torch (rear flash LED) on or off. No-op if the camera isn't
-  /// ready; swallows the error on devices without a flash so the UI never
-  /// crashes on a missing LED.
+  // no-op if not ready; errors on flashless devices are swallowed
   Future<void> setTorch(bool on) async {
     final c = controller;
     if (c == null || !c.value.isInitialized) return;
@@ -48,8 +43,7 @@ class CameraService {
 
   Future<void> toggleTorch() => setTorch(!torchOn);
 
-  /// Captures a single JPEG to a temp file and returns its path, or null if a
-  /// capture is already in flight or the camera is not ready.
+  // returns the jpeg path, or null if busy / not ready
   Future<String?> capture() async {
     final c = controller;
     if (c == null || !c.value.isInitialized || c.value.isTakingPicture) {

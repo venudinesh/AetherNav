@@ -8,28 +8,22 @@ import '../core/permissions.dart';
 import '../services/llm/llm_service.dart';
 import 'settings_controller.dart';
 
-/// Lifecycle of the optional offline model, so the Offline AI screen can show an
-/// honest state and the right action instead of a silent dead button.
+/// Lifecycle of the optional offline model.
 enum LlmStatus {
-  disabled, // feature off — the deterministic matcher answers
-  absent, // enabled, but no model downloaded or imported yet
+  disabled, // feature off; the deterministic matcher answers
+  absent, // enabled, but no model file set yet
   downloading, // model download in progress
   paused, // download paused by the user
-  verifying, // download finished, settling the file into place
-  present, // a model file is set but not loaded into memory
-  loading, // loading the model into the native engine
+  verifying, // download finished, settling the file
+  present, // model file set, not loaded
+  loading, // loading into the native engine
   ready, // loaded and answering
   error, // download or load failed
 }
 
-/// Owns the optional offline voice-assistant model: the one-time background
-/// download (resumable, with an OS progress notification), side-loading a
-/// `.gguf` from storage, and injecting/ejecting it into [LlmService].
-///
-/// Inference stays an enhancement — [generate] returns null unless a model is
-/// [LlmStatus.ready], so the deterministic matcher always answers otherwise.
-/// The active model path is persisted through [SettingsController] so an
-/// injected model reloads on the next launch.
+/// Manages the optional offline model: background download, importing a
+/// `.gguf`, and loading it into [LlmService]. The active path is persisted
+/// via [SettingsController].
 class LlmController extends ChangeNotifier {
   LlmController(this._llm, this._settings) {
     status = _settings.useLocalLlm
@@ -40,8 +34,7 @@ class LlmController extends ChangeNotifier {
   final LlmService _llm;
   final SettingsController _settings;
 
-  // Llama-3.2-1B-Instruct Q4_K_M (~0.8 GB). Filename/casing verified on Hugging
-  // Face before hardcoding. CPU inference — see LlmService.load.
+  // Llama-3.2-1B-Instruct Q4_K_M (~0.8 GB). CPU-only inference.
   static const _kModelUrl =
       'https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf';
   static const _kModelFilename = 'Llama-3.2-1B-Instruct-Q4_K_M.gguf';
@@ -53,18 +46,16 @@ class LlmController extends ChangeNotifier {
   String? modelName;
   String? error;
 
-  /// True from the moment a download completes until the user dismisses the
-  /// "model ready" card on the Home screen. In-memory only — a nicety, not state
-  /// worth persisting.
+  /// Set once a download completes; cleared when the user dismisses the
+  /// "model ready" card on Home. In-memory only.
   bool showReadyOnHome = false;
 
   bool _enabled = false;
 
   String? get modelPath => _settings.modelPath;
 
-  /// One-time wiring: the OS notification config and the central task-update
-  /// listener, then resume any download left running in the background. Call
-  /// once after construction, before enabling.
+  /// One-time wiring: notifications, the task listener, and resuming any
+  /// download left running. Call before enabling.
   Future<void> init() async {
     FileDownloader().configureNotification(
       running: const TaskNotification(
@@ -81,9 +72,7 @@ class LlmController extends ChangeNotifier {
     await FileDownloader().start(); // track + resume background downloads
   }
 
-  /// Enable/disable the feature. Idempotent (mirrors LocationController): a
-  /// re-sent current value is ignored. Enabling loads a set model; disabling
-  /// unloads it.
+  /// setEnabled is idempotent. Enabling loads a set model; disabling unloads it.
   Future<void> setEnabled(bool on) async {
     if (on == _enabled) return;
     _enabled = on;
@@ -99,13 +88,12 @@ class LlmController extends ChangeNotifier {
     }
   }
 
-  /// Start the one-time background download of the recommended model.
+  /// Start the background download of the recommended model.
   Future<void> downloadDefault() async {
     error = null;
     progress = 0;
     showReadyOnHome = false;
-    // Ask for the Android 13+ notification permission so the progress + complete
-    // notifications can show. Best-effort — the download proceeds either way.
+    // Ask for the Android 13+ notification permission; best-effort.
     await AppPermissions.ensureNotifications();
     _set(LlmStatus.downloading);
     final task = DownloadTask(
@@ -136,7 +124,7 @@ class LlmController extends ChangeNotifier {
 
   Future<void> cancel() => FileDownloader().cancelTaskWithId(_kTaskId);
 
-  /// Side-load a `.gguf` the user already has in storage (SAF — no permission).
+  /// Import a `.gguf` from storage (SAF, no permission needed).
   Future<void> importFromStorage() async {
     final files = await FilePicker.pickFiles(type: FileType.any);
     if (files.isEmpty) return; // user canceled
@@ -191,15 +179,14 @@ class LlmController extends ChangeNotifier {
       await downloadDefault();
     }
   }
-  /// Grounded generation for the voice layer. Returns null unless a model is
-  /// [LlmStatus.ready], so the deterministic matcher always answers otherwise.
+  /// Generation for the voice layer; returns null unless the model is ready.
   Future<String?> generate(String prompt) {
     if (status != LlmStatus.ready) return Future.value(null);
     return _llm.generate(prompt);
   }
 
-  /// Central task-update listener (one per app). Filters to our model task and
-  /// maps download lifecycle → [LlmStatus] + [progress].
+  /// Single app-level task listener; maps our task's updates to
+  /// [LlmStatus] + [progress].
   void _onUpdate(TaskUpdate update) {
     if (update.task.taskId != _kTaskId) return;
     if (update is TaskStatusUpdate) {
@@ -230,11 +217,10 @@ class LlmController extends ChangeNotifier {
     }
   }
 
-  /// Download finished: settle the file into place, persist its path, and load
-  /// it if the feature is enabled (else leave it [present] for later).
+  /// Download finished: settle the file, persist its path, load if enabled.
   Future<void> _onComplete(Task task) async {
     progress = 1;
-    showReadyOnHome = true; // surface the "model ready" card on Home
+    showReadyOnHome = true;
     _set(LlmStatus.verifying);
     final path = await task.filePath();
     _settings.setModelPath(path);
@@ -246,7 +232,7 @@ class LlmController extends ChangeNotifier {
     }
   }
 
-  /// Dismiss the Home "model ready" card once the user has seen it.
+  /// Dismiss the Home "model ready" card.
   void dismissHomeReady() {
     showReadyOnHome = false;
     notifyListeners();

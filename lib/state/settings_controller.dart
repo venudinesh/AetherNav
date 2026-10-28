@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// User-adjustable preferences, persisted to [SharedPreferences] so they survive
-/// an app restart. Liquid Glass is an opt-in surface style, OFF by default in
-/// favour of opaque Material surfaces (per DESIGN_RULES).
+/// User preferences, persisted to [SharedPreferences].
 class SettingsController extends ChangeNotifier {
   SettingsController(this._prefs) {
     themeMode =
@@ -15,6 +13,8 @@ class SettingsController extends ChangeNotifier {
     followLocation = _prefs.getBool(_kFollowLocation) ?? true;
     useLocalLlm = _prefs.getBool(_kUseLocalLlm) ?? false;
     llmPromptSeen = _prefs.getBool(_kLlmPromptSeen) ?? false;
+    introSeen = _prefs.getBool(_kIntroSeen) ?? false;
+    largeText = _prefs.getBool(_kLargeText) ?? false;
     modelPath = _prefs.getString(_kModelPath);
   }
 
@@ -28,6 +28,8 @@ class SettingsController extends ChangeNotifier {
   static const _kFollowLocation = 'followLocation';
   static const _kUseLocalLlm = 'useLocalLlm';
   static const _kLlmPromptSeen = 'llmPromptSeen';
+  static const _kIntroSeen = 'introSeen';
+  static const _kLargeText = 'largeText';
   static const _kModelPath = 'modelPath';
 
   ThemeMode themeMode = ThemeMode.system;
@@ -35,23 +37,25 @@ class SettingsController extends ChangeNotifier {
   bool hapticsEnabled = true;
   bool liquidGlass = false;
 
-  /// Live GPS location on the map. OFF by default: the app stays fully
-  /// on-device until the user opts in to location + map tiles.
+  /// Live GPS location on the map. Off by default.
   bool liveLocation = false;
 
-  /// Keep the map centred on the current position as it moves.
+  /// Keep the map centred on the current position.
   bool followLocation = true;
 
-  /// Opt-in offline voice-assistant LLM. OFF by default: the deterministic
-  /// matcher answers unless the user downloads/side-loads a model and enables it.
+  /// Opt-in offline voice-assistant LLM. Off by default.
   bool useLocalLlm = false;
 
-  /// Whether the first-launch "download the model?" prompt has been shown, so it
-  /// only appears once.
+  /// Whether the model-download prompt has been shown.
   bool llmPromptSeen = false;
 
-  /// Filesystem path to the active GGUF model, or null if none is set. Persisted
-  /// so an injected model reloads on the next launch.
+  /// Whether the first-run onboarding card has been dismissed.
+  bool introSeen = false;
+
+  /// Scales the app's text up for readability.
+  bool largeText = false;
+
+  /// Path to the active GGUF model, or null.
   String? modelPath;
 
   void setThemeMode(ThemeMode mode) {
@@ -99,6 +103,18 @@ class SettingsController extends ChangeNotifier {
   void setLlmPromptSeen(bool value) {
     llmPromptSeen = value;
     _prefs.setBool(_kLlmPromptSeen, value);
+    notifyListeners();
+  }
+
+  void setIntroSeen(bool value) {
+    introSeen = value;
+    _prefs.setBool(_kIntroSeen, value);
+    notifyListeners();
+  }
+
+  void setLargeText(bool value) {
+    largeText = value;
+    _prefs.setBool(_kLargeText, value);
     notifyListeners();
   }
 

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Brand seeds. Indigo is the Material 3 seed; teal is the accent
-/// (per DESIGN_RULES: "one seed color -> M3 tonal scheme, indigo seed, teal accent").
+/// Brand seeds: indigo is the Material 3 seed, teal the accent.
 const Color kIndigoSeed = Color(0xFF4F46E5); // indigo-600
 const Color kTealSeed = Color(0xFF0D9488); // teal-600
 
-/// Semantic status colors (success / warning / danger / info), used ONLY where a
-/// color carries meaning. Each fill is paired with an on-color chosen for WCAG AA.
-/// Exposed as a ThemeExtension so widgets read them from the active theme.
+/// Semantic status colors (success / warning / danger / info), with paired
+/// on-colors. Exposed as a ThemeExtension.
 @immutable
 class StatusColors extends ThemeExtension<StatusColors> {
   final Color success;

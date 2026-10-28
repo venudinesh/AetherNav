@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The kinds of things the offline perception pipeline can surface.
+/// what the perception pipeline can detect
 enum DetectionKind { sign, exitSign, arrow, stairs, door, obstacle, text, unknown }
 
 extension DetectionKindLabel on DetectionKind {
@@ -16,14 +16,14 @@ extension DetectionKindLabel on DetectionKind {
       };
 }
 
-/// A single perception result for one frame.
+/// one perception result for a frame
 class Detection {
   final DetectionKind kind;
-  final String label; // human-facing, e.g. "Exit 4", "Stairs ahead"
-  // Fraction of the frame the box covers (0..1) — a nearness cue, not a model
-  // confidence. Drives the obstacle danger threshold; 0 where nearness doesn't apply.
+  final String label; // human-facing, e.g. "Exit 4"
+  // frame area fraction (0..1), a nearness cue not model confidence;
+  // feeds the obstacle danger threshold
   final double prominence;
-  final Rect boundingBox; // in source-image pixel coordinates
+  final Rect boundingBox; // source-image pixel coords
 
   const Detection({
     required this.kind,

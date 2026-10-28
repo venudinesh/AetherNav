@@ -3,9 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'models/trip_log.dart';
 import 'models/trip_record.dart';
 
-/// Local, offline SQLite store for trip / hazard / voice logs and saved trips.
-/// Everything stays on the device; there is no network or laptop sync
-/// (standalone app).
+/// local sqflite store for logs and saved trips. on-device only, no sync.
 class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
@@ -24,8 +22,7 @@ class AppDatabase {
         await _createTrips(db);
       },
       onUpgrade: (db, oldV, newV) async {
-        // v1 → v2 added the saved-trips table. Idempotent so a partial upgrade
-        // can be re-run safely.
+        // v1->v2 added trips; idempotent so a partial upgrade can be re-run
         if (oldV < 2) await _createTrips(db);
       },
     );
@@ -85,7 +82,7 @@ class AppDatabase {
     return db.delete('trip_log');
   }
 
-  // --- Saved trips (Strava-style history) ---
+  // --- saved trips ---
 
   Future<int> insertTrip(TripRecord trip) async {
     final db = await database;

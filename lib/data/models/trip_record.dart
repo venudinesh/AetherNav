@@ -2,10 +2,9 @@ import 'dart:convert';
 
 import 'package:latlong2/latlong.dart';
 
-/// One saved trip (Strava-style history): the IMU-derived distance/steps/
-/// duration, plus a GPS breadcrumb to replay on the map when Live location was
-/// on during the trip. Persisted locally in sqflite. The track is stored as a
-/// JSON array of `[lat, lng]` pairs; a pure IMU trip stores an empty track.
+/// one saved trip: imu-derived distance/steps/duration plus an optional gps
+/// breadcrumb track. track is a json array of `[lat, lng]` pairs, empty for
+/// pure imu trips.
 class TripRecord {
   final int? id;
   final DateTime startTime;
@@ -25,7 +24,6 @@ class TripRecord {
     this.track = const [],
   });
 
-  /// A geographic path exists only if two or more GPS fixes were recorded.
   bool get hasPath => track.length >= 2;
 
   Map<String, Object?> toMap() => {

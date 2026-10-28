@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
-/// The semantic tone of a [StatusChip]. Neutral uses surface colors; the others
-/// map to the [StatusColors] extension so color always carries meaning.
+/// Tone of a [StatusChip]; non-neutral values map to the [StatusColors] slots.
 enum StatusTone { neutral, success, warning, danger, info }
 
-/// A compact, quiet chip for a single status label. No drop shadow, no gradient.
 class StatusChip extends StatelessWidget {
   final String label;
   final StatusTone tone;

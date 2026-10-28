@@ -1,9 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- AetherNav Edge is offline-first: camera perception, navigation and the
-         voice assistant all run on-device. The ONLY networked feature is the
-         opt-in live map — INTERNET fetches OpenStreetMap tiles and the location
-         permissions drive the GPS "you are here" dot. All three stay unused
-         until the user turns on live location in Settings. -->
+    <!-- Offline-first: camera, IMU and voice all run on-device. INTERNET and the
+         location permissions are for the opt-in live map only (OSM tiles + GPS),
+         and stay unused until the user enables Live location in Settings. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />

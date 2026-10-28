@@ -4,9 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/permissions.dart';
 import '../../state/voice_controller.dart';
 
-/// Hands-free voice assistant. Speech recognition and answers run entirely
-/// on-device; a text field is always available as a fallback when the mic or
-/// recognizer is unavailable.
+/// Voice assistant. Recognition and answers run on-device; the text field works
+/// when the mic does not.
 class VoiceScreen extends StatefulWidget {
   const VoiceScreen({super.key});
   @override
@@ -15,6 +14,16 @@ class VoiceScreen extends StatefulWidget {
 
 class _VoiceScreenState extends State<VoiceScreen> {
   final _textCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialise speech (and thus the mic prompt) when this tab opens, so the
+    // on-device privacy note is on screen first — not at cold app launch.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<VoiceController>().ensureSpeech();
+    });
+  }
 
   @override
   void dispose() {
@@ -49,6 +58,16 @@ class _VoiceScreenState extends State<VoiceScreen> {
             listening: voice.listening,
             ready: voice.ready,
             onTap: () => _toggle(voice),
+          ),
+          const SizedBox(height: 10),
+          // Rationale shown before the mic prompt fires on first tap.
+          Text(
+            'Speech is transcribed on this device. Nothing is uploaded.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           if (!voice.ready) _UnavailableNote(error: voice.error),
@@ -152,9 +171,9 @@ class _UnavailableNote extends StatelessWidget {
         Expanded(
           child: Text(
             error == null
-                ? 'Speech recognition is unavailable on this device. You can '
-                    'still type a question below.'
-                : 'Voice input unavailable: $error. You can type below instead.',
+                ? 'Speech recognition is unavailable here. Type a question '
+                    'instead.'
+                : 'Voice input unavailable: $error. Type a question instead.',
             style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
@@ -203,7 +222,8 @@ class _AskField extends StatelessWidget {
       textInputAction: TextInputAction.send,
       onSubmitted: onSubmit,
       decoration: InputDecoration(
-        hintText: 'Type a question',
+        labelText: 'Ask a question',
+        hintText: 'Type here',
         prefixIcon: const Icon(Icons.keyboard_outlined),
         suffixIcon: IconButton(
           icon: const Icon(Icons.send),

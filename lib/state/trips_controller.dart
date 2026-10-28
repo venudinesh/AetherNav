@@ -3,9 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../data/app_database.dart';
 import '../data/models/trip_record.dart';
 
-/// Owns the saved-trip history (Strava-style). Reads from and writes to
-/// [AppDatabase], newest first. Saving must never break the live trip, so
-/// failures are swallowed — the trip still ran, it just isn't in the list.
+/// Saved trip history, newest first. Write failures are swallowed so a
+/// failed save can't break the live trip.
 class TripsController extends ChangeNotifier {
   final AppDatabase _db;
   TripsController(this._db);

@@ -2,8 +2,7 @@ import 'package:vibration/vibration.dart';
 
 import '../../data/models/hazard_event.dart';
 
-/// Haptic feedback for hazards. Patterns escalate with severity. Safe no-op when
-/// the device has no vibrator or the platform call fails.
+/// vibration per hazard level; no-op without a vibrator.
 class HapticService {
   bool _hasVibrator = false;
 
@@ -32,7 +31,7 @@ class HapticService {
           break;
       }
     } catch (_) {
-      // Ignore: haptics are a non-critical enhancement.
+      // non-critical, ignore
     }
   }
 }

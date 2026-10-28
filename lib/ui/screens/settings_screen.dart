@@ -6,8 +6,6 @@ import '../../state/settings_controller.dart';
 import 'local_llm_screen.dart';
 import 'logs_screen.dart';
 
-/// User preferences: theme, the opt-in Liquid Glass surface style (off by
-/// default), spoken/haptic feedback, live location & map, and the trip log.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
   @override
@@ -90,13 +88,21 @@ class _AppearanceSection extends StatelessWidget {
       const SizedBox(height: 8),
       Card(
         child: SwitchListTile.adaptive(
+          value: settings.largeText,
+          onChanged: read.setLargeText,
+          secondary: const Icon(Icons.format_size),
+          title: const Text('Larger text'),
+          subtitle: const Text('Scales up text throughout the app.'),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Card(
+        child: SwitchListTile.adaptive(
           value: settings.liquidGlass,
           onChanged: read.setLiquidGlass,
           secondary: const Icon(Icons.blur_on),
           title: const Text('Liquid Glass surfaces'),
-          subtitle: const Text(
-              'Translucent, blurred panels. Off by default — plain surfaces '
-              'stay easiest to read.'),
+          subtitle: const Text('Translucent, blurred panels.'),
         ),
       ),
     ]);
@@ -145,8 +151,7 @@ class _LocationSection extends StatelessWidget {
           secondary: const Icon(Icons.my_location),
           title: const Text('Live location'),
           subtitle: const Text(
-              'Uses GPS and downloads OpenStreetMap tiles — the only feature '
-              'that needs network. Off by default.'),
+              'Uses GPS and downloads OpenStreetMap tiles. Needs network.'),
         ),
         const Divider(height: 1, indent: 16, endIndent: 16),
         SwitchListTile.adaptive(
@@ -177,8 +182,7 @@ class _LocalAiSection extends StatelessWidget {
           secondary: const Icon(Icons.auto_awesome_outlined),
           title: const Text('Offline voice model'),
           subtitle: const Text(
-              'An optional on-device model rephrases answers more naturally. '
-              'Off by default — the built-in matcher always works without it.'),
+              'Optional on-device model that rephrases answers more naturally.'),
         ),
         const Divider(height: 1, indent: 16, endIndent: 16),
         ListTile(
@@ -196,15 +200,15 @@ class _LocalAiSection extends StatelessWidget {
 
   String _statusText(LlmController llm) => switch (llm.status) {
         LlmStatus.disabled => 'Turned off',
-        LlmStatus.absent => 'No model — download or import one',
+        LlmStatus.absent => 'No model. Download or import one',
         LlmStatus.downloading =>
           'Downloading… ${(llm.progress * 100).round()}%',
         LlmStatus.paused => 'Download paused',
         LlmStatus.verifying => 'Finishing up…',
         LlmStatus.present => 'Ready to load',
         LlmStatus.loading => 'Loading…',
-        LlmStatus.ready => 'Loaded and answering',
-        LlmStatus.error => llm.error ?? 'Error — tap to retry',
+        LlmStatus.ready => 'Loaded',
+        LlmStatus.error => llm.error ?? 'Error. Tap to retry',
       };
 }
 
@@ -243,9 +247,9 @@ class _AboutCard extends StatelessWidget {
           ]),
           const SizedBox(height: 10),
           Text(
-            'An offline-first mobility aid. Camera perception, navigation and '
-            'the voice assistant all run on this device — no account. Only the '
-            'optional live map uses GPS and the network.',
+            'Offline-first mobility aid. Perception, navigation and the voice '
+            'assistant run on this device, with no account. The live map is the '
+            'only part that uses GPS and the network.',
             style: t.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 12),
@@ -254,7 +258,7 @@ class _AboutCard extends StatelessWidget {
                 size: 16, color: scheme.onSurfaceVariant),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Works fully offline unless you turn on the live map',
+              child: Text('Works offline unless the live map is on',
                   style:
                       t.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
             ),
